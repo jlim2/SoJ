@@ -92,7 +92,9 @@ def computeORB(img):
     :return: keypoints, des
     """
     # Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
-    orb = cv2.ORB_create(nfeatures=10000, scoreType=cv2.ORB_FAST_SCORE)
+    # orb = cv2.ORB_create(nfeatures=10000, scoreType=cv2.ORB_FAST_SCORE)
+    orb = cv2.ORB_create()
+
     keypoints = orb.detect(image=img)
     keypoints, des = orb.compute(img, keypoints)
 
@@ -113,14 +115,16 @@ def readModelAlphabets(alphabetImgs):
     alphFeatureDict = {}
     for imgFile in imgFiles:
         if (imgFile.endswith('.png')):
-            imgName = imgFile.strip(".png")
             # imgNames.append(imgName)
-            img = cv2.imread(imgFile)
+            img = cv2.imread("alphabets/" + imgFile)
+            # print(type(imgFile))
             # print(imgFile)
             kp, des = computeORB(img)
-            print(kp)
-            print(des)
+            # print(kp)
+            # print(des)
+            imgName = imgFile.strip(".png")
             alphFeatureDict.update({imgName: (kp, des)})
+
 
     return alphFeatureDict
 
@@ -153,10 +157,12 @@ if __name__ == '__main__':
         # print(des.shape)
 
 
+
+    # imgA = cv2.imread('alphabets/A.png')
+    # showORB(imgA)
+    # keypoints, descriptors = computeORB(imgA)
+    # print(keypoints)
     print(readModelAlphabets('alphabets'))
-    imgA = cv2.imread('alphabets/A.png')
-    showORB(imgA)
-    keypoints, descriptors = computeORB(imgA)
     # print(des.shape)
     # print(kp)
     # print(des)
