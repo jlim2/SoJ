@@ -13,7 +13,7 @@ from os import listdir
 from os.path import isfile, join
 import os
 
-def identifyWords(img):
+def readImgFeatures(img):
     """First, identify if a sign is in an image by looking (perhaps) for a white or black box, or a box of
     the given background color). Next, use the affine or perspective transformations to warp the image to
     scale, center, and orient the discovered box straight on.
@@ -95,12 +95,12 @@ def computeORB(img):
     # orb = cv2.ORB_create(nfeatures=10000, scoreType=cv2.ORB_FAST_SCORE)
     orb = cv2.ORB_create()
 
-    keypoints = orb.detect(image=img)
-    keypoints, des = orb.compute(img, keypoints)
+    # keypoints = orb.detect(image=img)
+    keypoints, des = orb.detectAndCompute(img, None)
 
     return keypoints, des
 
-def readModelAlphabets(alphabetImgs):
+def readAlphabetFeatures(alphabetImgs):
     alphFeatureDict = {}
     # imgNames = []
     # for img in alphabetImgs:
@@ -123,7 +123,7 @@ def readModelAlphabets(alphabetImgs):
             # print(kp)
             # print(des)
             imgName = imgFile.strip(".png")
-            alphFeatureDict.update({imgName: (kp, des)})
+            alphFeatureDict.update({"alphabets/"+imgFile: (kp, des)})
 
 
     return alphFeatureDict
@@ -162,7 +162,60 @@ if __name__ == '__main__':
     # showORB(imgA)
     # keypoints, descriptors = computeORB(imgA)
     # print(keypoints)
-    print(readModelAlphabets('alphabets'))
+    # print(readModelAlphabets('alphabets'))
     # print(des.shape)
     # print(kp)
     # print(des)
+
+    #Set up Flanner
+    FLANN_INDEX_LSH = 6
+    index_params = dict(algorithm=FLANN_INDEX_LSH,
+                        table_number=6,  # 12
+                        key_size=12,  # 20
+                        multi_probe_level=1)  # 2
+    search_params = dict(checks=50)
+
+    flanner = cv2.FlannBasedMatcher(index_params, search_params)
+
+
+    alphFeatureDict = readAlphabetFeatures('alphabets')
+    alphImgs = alphFeatureDict.keys()
+
+    # targetImgs = {}
+    # for img in alphImgs:
+    #     targetImg = cv2.imread(img)
+    #     kpTarget = alphFeatureDict.get(targetImg)[0]
+    #     desTarget = alphFeatureDict.get(targetImg)[1]
+
+    targetImg = cv2.imread('alphabets/A.png')
+    kpTarget = alphFeatureDict.get('A')[0]
+    desTarget = alphFeatureDict.get('A')[1]
+
+
+    vidCap = cv2.VideoCapture(0)
+    while True:
+        gotOne, frame = vidCap.read()
+        if (gotOne):
+            kpQuery, desQuery = computeORB(frame)
+
+            matches = flanner.match(desTarget, desQuery)
+            matches.sort(key=lambda x: x.distance)  # sort by distance
+
+            # draw matches with distance less than threshold
+            i = 0
+            for i in range(len(matches)):
+                if matches[i].distance > 50.0:
+                    break
+
+                img3 = cv2.drawMatches(targetImg, kpTarget, frame, kpQuery, matches[:i], None)
+                img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
+                cv2.imshow("Matches", img4)
+            x = cv2.waitKey(20)
+            c = chr(x & 0xFF)
+            if c == 'q':
+                break
+
+    vidCap.release()
+    cv2.destroyAllWindows()
+
+
