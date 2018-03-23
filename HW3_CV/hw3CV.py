@@ -123,7 +123,8 @@ def readAlphabetFeatures(alphabetImgs):
             # print(kp)
             # print(des)
             imgName = imgFile.strip(".png")
-            alphFeatureDict.update({"alphabets/"+imgFile: (kp, des)})
+            # alphFeatureDict.update({imgFile: (kp, des)})
+            alphFeatureDict.update({imgName: (kp, des)})
 
 
     return alphFeatureDict
@@ -177,7 +178,6 @@ if __name__ == '__main__':
 
     flanner = cv2.FlannBasedMatcher(index_params, search_params)
 
-
     alphFeatureDict = readAlphabetFeatures('alphabets')
     alphImgs = alphFeatureDict.keys()
 
@@ -196,20 +196,58 @@ if __name__ == '__main__':
     while True:
         gotOne, frame = vidCap.read()
         if (gotOne):
+            print("gotOne")
             kpQuery, desQuery = computeORB(frame)
+
+            # for targetImg in alphImgs:
 
             matches = flanner.match(desTarget, desQuery)
             matches.sort(key=lambda x: x.distance)  # sort by distance
 
+
+            matchedKPs = {}
             # draw matches with distance less than threshold
             i = 0
+
+
+
+            #compare each alphImgs to frame and count how many matches
+            # for img in alphImgs:
+            #     desTarget = alphFeatureDict.get(img)[1]
+            #     matches = flanner.match(desTarget, desQuery)
+            #     for i in range(len(matches)):
+            #         if matches[i].distance > 50.0:
+            #             break
+            #         print(matches[i])
+
+
+            numMatched = 0
             for i in range(len(matches)):
                 if matches[i].distance > 50.0:
                     break
+                numMatched += 1
+
+                # print("matches[i]: "+str(matches[i]), end=" ")
+                # print("distance: "+str(matches[i].distance), end=" ")
+                # print("imgIdx: "+str(matches[i].imgIdx), end=" ")
+                # print("queryIdx: " + str(matches[i].queryIdx), end=" ")
+                # print("trainIdx: " + str(matches[i].trainIdx))
+                # queryImg_idx = matches[i].queryIdx
+                # targetImg_idx = matches[i].trainIdx
+                #
+                # (x1, y1) = kpQuery[queryImg_idx].pt
+                # (x2, y2) = kpTarget[targetImg_idx].pt
 
                 img3 = cv2.drawMatches(targetImg, kpTarget, frame, kpQuery, matches[:i], None)
                 img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
                 cv2.imshow("Matches", img4)
+            # print(numMatched)
+
+            if numMatched >= 22:
+                print("matched!")
+
+
+
             x = cv2.waitKey(20)
             c = chr(x & 0xFF)
             if c == 'q':
