@@ -101,23 +101,22 @@ def computeORB(img):
 
     return keypoints, des
 
-def readAlphabetFeatures(alphabetImgs):
-    alphFeatureDict = {}
+def readLetterFeatures(dir):
     # imgNames = []
     # for img in alphabetImgs:
     #     imgName = img.strip(".png")
     #     imgNames.append(imgName)
     # print(imgNames)
 
-    imgFiles = [f for f in listdir("alphabets") if isfile(join("alphabets", f))]
+    imgFiles = [f for f in listdir(dir) if isfile(join(dir, f))]
     # testImgFiles.append([f for f in listdir("TestImages/Letters") if isfile(join("TestImages/Letters", f))])
 
     # imgNames = []
-    alphFeatureDict = {}
+    letterFeatureDict = {}
     for imgFile in imgFiles:
         if (imgFile.endswith('.png')):
             # imgNames.append(imgName)
-            img = cv2.imread("alphabets/" + imgFile)
+            img = cv2.imread("letterSamples/" + imgFile)
             # print(type(imgFile))
             # print(imgFile)
             kp, des = computeORB(img)
@@ -125,10 +124,10 @@ def readAlphabetFeatures(alphabetImgs):
             # print(des)
             imgName = imgFile.strip(".png")
             # alphFeatureDict.update({imgFile: (kp, des)})
-            alphFeatureDict.update({imgName: (kp, des)})
+            letterFeatureDict.update({imgName: (kp, des)})
 
 
-    return alphFeatureDict
+    return letterFeatureDict
 
 if __name__ == '__main__':
     img = cv2.imread('LetterInWhite.png', 0)
@@ -179,8 +178,8 @@ if __name__ == '__main__':
 
     flanner = cv2.FlannBasedMatcher(index_params, search_params)
 
-    alphFeatureDict = readAlphabetFeatures('alphabets')
-    alphImgs = alphFeatureDict.keys()
+    letterFeatureDict = readLetterFeatures('letterSamples')
+    letterImgs = letterFeatureDict.keys()
 
     # targetImgs = {}
     # for img in alphImgs:
@@ -264,15 +263,15 @@ if __name__ == '__main__':
     vidCap.release()
     cv2.destroyAllWindows()
     """
-    frame = cv2.imread('Hatch.png')
+    frame = cv2.imread('Door.png')
     kpQuery, desQuery = computeORB(frame)
 
     matchedKPs = {}
-
-    for alph in alphFeatureDict:
-        targetImg = cv2.imread('alphabets/' + alph + '.png')
-        kpTarget = alphFeatureDict.get(alph)[0]
-        desTarget = alphFeatureDict.get(alph)[1]
+    i = 0
+    for letter in letterFeatureDict:
+        targetImg = cv2.imread('letterSamples/' + letter + '.png')
+        kpTarget = letterFeatureDict.get(letter)[0]
+        desTarget = letterFeatureDict.get(letter)[1]
 
         matches = flanner.match(desTarget, desQuery)
         matches.sort(key=lambda x: x.distance)  # sort by distance
@@ -281,7 +280,16 @@ if __name__ == '__main__':
             if matches[i].distance > 50.0:
                 break
             numMatched += 1
-        matchedKPs.update({alph: numMatched})
+        matchedKPs.update({letter: numMatched})
+
+        img3 = cv2.drawMatches(targetImg, kpTarget, frame, kpQuery, matches[:i], None)
+        img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
+        cv2.imshow("Matches", img4)
+        x = cv2.waitKey(20)
+        c = chr(x & 0xFF)
+        if c == 'q':
+            break
+    cv2.destroyAllWindows()
 
     # print(matchedKPs)
     d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
