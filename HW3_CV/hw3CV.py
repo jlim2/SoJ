@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 from os import listdir
 from os.path import isfile, join
+from collections import OrderedDict
 import os
 
 def readImgFeatures(img):
@@ -187,11 +188,13 @@ if __name__ == '__main__':
     #     kpTarget = alphFeatureDict.get(targetImg)[0]
     #     desTarget = alphFeatureDict.get(targetImg)[1]
 
-    targetImg = cv2.imread('alphabets/A.png')
-    kpTarget = alphFeatureDict.get('A')[0]
-    desTarget = alphFeatureDict.get('A')[1]
+    #targetImg = cv2.imread('alphabets/A.png')
+    #kpTarget = alphFeatureDict.get('A')[0]
+    #desTarget = alphFeatureDict.get('A')[1]
 
 
+
+    """
     vidCap = cv2.VideoCapture(0)
     while True:
         gotOne, frame = vidCap.read()
@@ -207,10 +210,7 @@ if __name__ == '__main__':
 
             matchedKPs = {}
             # draw matches with distance less than threshold
-            i = 0
-
-
-
+            #i = 0
             #compare each alphImgs to frame and count how many matches
             # for img in alphImgs:
             #     desTarget = alphFeatureDict.get(img)[1]
@@ -221,11 +221,19 @@ if __name__ == '__main__':
             #         print(matches[i])
 
 
-            numMatched = 0
-            for i in range(len(matches)):
-                if matches[i].distance > 50.0:
-                    break
-                numMatched += 1
+            for alph in alphFeatureDict:
+                targetImg = cv2.imread('alphabets/'+alph+'.png')
+                kpTarget = alphFeatureDict.get(alph)[0]
+                desTarget = alphFeatureDict.get(alph)[1]
+
+                matches = flanner.match(desTarget, desQuery)
+                matches.sort(key=lambda x: x.distance)  # sort by distance
+                numMatched = 0
+                for i in range(len(matches)):
+                    if matches[i].distance > 50.0:
+                        break
+                    numMatched += 1
+                matchedKPs.update({alph: numMatched})
 
                 # print("matches[i]: "+str(matches[i]), end=" ")
                 # print("distance: "+str(matches[i].distance), end=" ")
@@ -243,8 +251,8 @@ if __name__ == '__main__':
                 cv2.imshow("Matches", img4)
             # print(numMatched)
 
-            if numMatched >= 22:
-                print("matched!")
+            #if numMatched >= 22:
+            #    print("matched!")
 
 
 
@@ -255,5 +263,27 @@ if __name__ == '__main__':
 
     vidCap.release()
     cv2.destroyAllWindows()
+    """
+    frame = cv2.imread('Hatch.png')
+    kpQuery, desQuery = computeORB(frame)
 
+    matchedKPs = {}
 
+    for alph in alphFeatureDict:
+        targetImg = cv2.imread('alphabets/' + alph + '.png')
+        kpTarget = alphFeatureDict.get(alph)[0]
+        desTarget = alphFeatureDict.get(alph)[1]
+
+        matches = flanner.match(desTarget, desQuery)
+        matches.sort(key=lambda x: x.distance)  # sort by distance
+        numMatched = 0
+        for i in range(len(matches)):
+            if matches[i].distance > 50.0:
+                break
+            numMatched += 1
+        matchedKPs.update({alph: numMatched})
+
+    # print(matchedKPs)
+    d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
+    for k, v in d_sorted_by_value.items():
+        print("%s: %s" % (k, v))
