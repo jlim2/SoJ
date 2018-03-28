@@ -16,37 +16,80 @@ from PIL import Image
 # import pytesseract  #Python Tesseract; Installation required.
 import os
 
-def readImgFeatures(img):
-    """First, identify if a sign is in an image by looking (perhaps) for a white or black box, or a box of
-    the given background color). Next, use the affine or perspective transformations to warp the image to
-    scale, center, and orient the discovered box straight on.
+def initORB(numFeatures=20):
     """
+    Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
+    :param numFeatures: the number of features that will be detected and computed using ORB
+    :return: initiated orb
+    """
+    return cv2.ORB_create(nfeatures=numFeatures, scoreType=cv2.ORB_FAST_SCORE)
 
-    pass
+def showORB(img, imgKeypoints):
+    # Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
+    orb = initORB()
 
-
-
-def showSobelGradient(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Compute gradient in horizontal direction (detects vertical edges)
-    sobelValsHorz = cv2.Sobel(gray, cv2.CV_32F, 1, 0)
-    horzImg = cv2.convertScaleAbs(sobelValsHorz)
-    cv2.imshow("horizontal gradient", horzImg)
-
-    # Compute gradient in vertical direction (Detects horizontal edges)
-    sobelValsVerts = cv2.Sobel(gray, cv2.CV_32F, 0, 1)
-    vertImg = cv2.convertScaleAbs(sobelValsVerts)
-    cv2.imshow("vertical gradient", vertImg)
-
-    # Combine the two gradients
-    sobelComb = cv2.addWeighted(sobelValsHorz, 0.5,
-                                sobelValsVerts, 0.5, 0)
-    # Convert back to uint8
-    sobelImg = cv2.convertScaleAbs(sobelComb)
-    cv2.imshow("Sobel", sobelImg)
+    img2 = cv2.drawKeypoints(img, imgKeypoints, None, color=(0, 255, 0))
+    cv2.imshow("ORB KeyPoints", img2)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+def computeORB(img):
+    """
+    Detect keypoints and desriptors of an image using ORB.
+    :param img: a processed image with cv2.imread(imgFilePath)
+    :return: keypoints of the image, descriptors of the image
+    """
+    orb = initORB()
+
+    # keypoints = orb.detect(image=img)
+    keypoints, des = orb.detectAndCompute(img, None)
+
+    return keypoints, des
+
+def readLetterFeatures(dir):
+    imgFiles = [f for f in listdir(dir) if isfile(join(dir, f))]
+    letterFeatureDict = {}
+    for imgFile in imgFiles:
+        if (imgFile.endswith('.png')):
+            img = cv2.imread(dir+"/" + imgFile)
+            kp, des = computeORB(img)
+            imgName = imgFile.strip(".png")
+            letterFeatureDict.update({imgName: (kp, des)})
+    return letterFeatureDict
+
+
+
+def getNumMatchedDict(targetImgsDir, queryImg):
+    # queryImg = cv2.imread(queryImg)
+
+    FLANN_INDEX_LSH = 6
+    index_params = dict(algorithm=FLANN_INDEX_LSH,
+                        table_number=6,  # 12
+                        key_size=12,  # 20
+                        multi_probe_level=1)  # 2
+    search_params = dict(checks=50)
+
+    flanner = cv2.FlannBasedMatcher(index_params, search_params)
+
+    letterFeatureDict = readLetterFeatures(targetImgsDir)
+
+    kpQuery, desQuery = computeORB(queryImg)
+
+    matchedKPs = {}
+    for letter in letterFeatureDict:
+        desTarget = letterFeatureDict.get(letter)[1]
+
+        matches = flanner.match(desTarget, desQuery)
+        matches.sort(key=lambda x: x.distance)  # sort by distance
+        numMatched = 0
+        for i in range(len(matches)):
+            if matches[i].distance > 50.0:
+                break
+            numMatched += 1
+        matchedKPs.update({letter: numMatched})
+
+    return matchedKPs
+
 
 def getCannyEdge(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -78,124 +121,64 @@ def showHoughLines(img):
     cv2.destroyAllWindows()
 
 
-def showORB(img):
-    # Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
-    orb = cv2.ORB_create(nfeatures=100000, scoreType=cv2.ORB_FAST_SCORE)
-    keypoints = orb.detect(image=img)
-
-    img2 = cv2.drawKeypoints(img, keypoints, None, color=(0, 255, 0))
-    cv2.imshow("ORB KeyPoints", img2)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-def computeORB(img):
-    """
-    An image that has been read
-    :param img:
-    :return: keypoints, des
-    """
-    # Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
-    # orb = cv2.ORB_create(nfeatures=10000, scoreType=cv2.ORB_FAST_SCORE)
-    orb = cv2.ORB_create(nfeatures=20, scoreType=cv2.ORB_FAST_SCORE)
-
-    # keypoints = orb.detect(image=img)
-    keypoints, des = orb.detectAndCompute(img, None)
-
-    return keypoints, des
-
-def readLetterFeatures(dir):
-    # imgNames = []
-    # for img in alphabetImgs:
-    #     imgName = img.strip(".png")
-    #     imgNames.append(imgName)
-    # print(imgNames)
-
-    imgFiles = [f for f in listdir(dir) if isfile(join(dir, f))]
-    # testImgFiles.append([f for f in listdir("TestImages/Letters") if isfile(join("TestImages/Letters", f))])
-
-    # imgNames = []
-    letterFeatureDict = {}
-    for imgFile in imgFiles:
-        if (imgFile.endswith('.png')):
-            # imgNames.append(imgName)
-            img = cv2.imread("letterSamples/" + imgFile)
-            # print(type(imgFile))
-            # print(imgFile)
-            kp, des = computeORB(img)
-            # print(kp)
-            # print(des)
-            imgName = imgFile.strip(".png")
-            # alphFeatureDict.update({imgFile: (kp, des)})
-            letterFeatureDict.update({imgName: (kp, des)})
-
-
-    return letterFeatureDict
-
 if __name__ == '__main__':
-    img = cv2.imread('LetterInWhite.png', 0)
-    # showCannyEdge(img)
-    # cannyEdges = getCannyEdge(img)
-    # for edge in cannyEdges:
-    #     print(edge)
-    # print(cannyEdges)
+    """
+    # use video
+    vidCap = cv2.VideoCapture(0)
+    while True:
+        print("hello")
+        gotOne, img = vidCap.read()
+        print(gotOne)
+        # cv2.imshow("Webcam", img)
+        # print(img)
+        # print(gotOne)
+        if (gotOne):
+            print("gotOne")
+            matchedKPs = getNumMatchedDict('letterSamples', img)
+            sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
 
-    # Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
-    # orb = cv2.ORB_create(nfeatures=100000, scoreType=cv2.ORB_FAST_SCORE)
-    # keypoints = orb.detect(image=img)
-    #
-    #
-    # img2 = cv2.drawKeypoints(img, keypoints, None, color=(0,255,0))
-    # cv2.imshow("ORB KeyPoints", img2)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+            # d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
+            print(sortedDic[0])
 
-    #
-    # showORB(img)
-    # keypoints, descriptors = computeORB(img)
-    # for kp in keypoints:
-    #     print(str(kp.pt))
-    # print(descriptors.shape)
-    # for des in descriptors:
-    #     pass
-        # print(des.shape)
+            # cv2.imshow("WebCam", img)
+            print(matchedKPs)
 
 
-
-    # imgA = cv2.imread('alphabets/A.png')
-    # showORB(imgA)
-    # keypoints, descriptors = computeORB(imgA)
-    # print(keypoints)
-    # print(readModelAlphabets('alphabets'))
-    # print(des.shape)
-    # print(kp)
-    # print(des)
-
-    #Set up Flanner
-    FLANN_INDEX_LSH = 6
-    index_params = dict(algorithm=FLANN_INDEX_LSH,
-                        table_number=6,  # 12
-                        key_size=12,  # 20
-                        multi_probe_level=1)  # 2
-    search_params = dict(checks=50)
-
-    flanner = cv2.FlannBasedMatcher(index_params, search_params)
-
-    letterFeatureDict = readLetterFeatures('letterSamples')
-    letterImgs = letterFeatureDict.keys()
-
-    targetImgs = {}
-    for img in letterImgs:
-        targetImg = cv2.imread("letterSamples/"+img+".png")
-
-        kpTarget = letterFeatureDict.get(img)[0]
-        desTarget = letterFeatureDict.get(img)[1]
-
-    #targetImg = cv2.imread('alphabets/A.png')
-    #kpTarget = alphFeatureDict.get('A')[0]
-    #desTarget = alphFeatureDict.get('A')[1]
+            # for k, v in d_sorted_by_value.items():
+            #     print("%s: %s" % (k, v))
 
 
+            img2 = cv2.imread('letterSamples/'+str(sortedDic[0])+".png")
+            kp, des = computeORB(img2)
+            kp2, des2=computeORB(img)
+            FLANN_INDEX_LSH = 6
+            index_params = dict(algorithm=FLANN_INDEX_LSH,
+                                table_number=6,  # 12
+                                key_size=12,  # 20
+                                multi_probe_level=1)  # 2
+            search_params = dict(checks=50)
 
+            flanner = cv2.FlannBasedMatcher(index_params, search_params)
+            matches = flanner.match(des, des2)
+
+            matches.sort(key=lambda x: x.distance)  # sort by distance
+            i=0
+            for i in range(len(matches)):
+                if matches[i].distance > 50.0:
+                    break
+
+            img3 = cv2.drawMatches(img2, kp, img, kp2, matches[:i], None)
+            img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
+
+            cv2.imshow("Matches", img4)
+
+        x = cv2.waitKey(10)  # Waiting may be needed for window updating
+        char = chr(x & 0xFF)
+        if (char == 'q'):  # esc == '27'
+            break
+    cv2.destroyAllWindows()
+    vidCap.release()
+    """
 
     # vidCap = cv2.VideoCapture(0)
     # while True:
@@ -266,35 +249,33 @@ if __name__ == '__main__':
     # vidCap.release()
     # cv2.destroyAllWindows()
 
-    frame = cv2.imread('letterSamples/hatch.png')
-    kpQuery, desQuery = computeORB(frame)
+    queryImg = cv2.imread('hatch_with_background.jpg')
+    queryImg = cv2.resize(queryImg, (0, 0), fx=0.2, fy=0.2)
 
-    matchedKPs = {}
-    i = 0
-    for letter in letterFeatureDict:
-        targetImg = cv2.imread('letterSamples/' + letter + '.png')
-        kpTarget = letterFeatureDict.get(letter)[0]
-        desTarget = letterFeatureDict.get(letter)[1]
+    blurImg = cv2.GaussianBlur(queryImg, (11, 11), 0)
 
-        matches = flanner.match(desTarget, desQuery)
-        matches.sort(key=lambda x: x.distance)  # sort by distance
-        numMatched = 0
-        for i in range(len(matches)):
-            if matches[i].distance > 50.0:
-                break
-            numMatched += 1
-        matchedKPs.update({letter: numMatched})
+    # showCannyEdge(blurImg)
 
-    #     img3 = cv2.drawMatches(targetImg, kpTarget, frame, kpQuery, matches[:i], None)
-    #     img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
-    #     cv2.imshow("Matches", img4)
-    #     x = cv2.waitKey(20)
-    #     c = chr(x & 0xFF)
-    #     if c == 'q':
-    #         break
-    # cv2.destroyAllWindows()
+    edges = getCannyEdge(blurImg)
+    _, thresh = cv2.threshold(edges, 0, 255, cv2.THRESH_BINARY)
+    _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
 
-    # print(matchedKPs)
-    d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
-    for k, v in d_sorted_by_value.items():
-        print("%s: %s" % (k, v))
+    cv2.drawContours(queryImg, contours, -1, (0, 255, 0), 3)
+    cv2.imshow('Contours', queryImg)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # cv2.imshow("GaussianBlur", blurImg)
+    # cv2.waitKey(0)
+
+
+
+    # showHoughLines(queryImg)
+    # showCannyEdge(queryImg)
+
+    # matchedKPs = getNumMatchedDict('letterSamples', queryImg)
+    #
+    # d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
+    # for k, v in d_sorted_by_value.items():
+    #     print("%s: %s" % (k, v))
+
