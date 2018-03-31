@@ -165,26 +165,24 @@ def findFocus(img):
 def drawFocus(img, x, y, w, h):
     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-if __name__ == '__main__':
-    queryImg = cv2.imread("hatch_with_background.png")
+def matchImageTo(targetImgDir, queryImg):
+    # queryImg = cv2.imread("hatch_with_background.png")
     x, y, w, h = findFocus(queryImg)
 
-    # drawFocus(queryImg, x, y, w, h)
-    cv2.imshow("queryImg", queryImg)
-    cv2.waitKey(0)
+    # #DEBUG
+    # cv2.imshow("queryImg", queryImg)
+    # cv2.waitKey(0)
+    #
+    # cv2.imshow("roi", queryImg[y:y+h, x:x+w])
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-    cv2.imshow("roi", queryImg[y:y+h, x:x+w])
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    # print(x, y, w, h)
-
-    roi = cv2.imwrite("roi.png", queryImg[y:y+h, x:x+w])
+    cv2.imwrite("roi.png", queryImg[y:y + h, x:x + w])
     roi = cv2.imread("roi.png")
-    # roi = queryImg[y:y+h, x:x+w]
-    matchedKPs = getNumMatchedDict('letterSamples', roi)
+
+    matchedKPs = getNumMatchedDict(targetImgDir, roi)
     sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
-    targetImg = cv2.imread('letterSamples/' + str(sortedDic[0])+ ".png")
+    targetImg = cv2.imread(targetImgDir + '/' + str(sortedDic[0]) + ".png")
     print(sortedDic)
     kpT, desT = computeORB(targetImg)
     kpQ, desQ = computeORB(roi)
@@ -205,14 +203,20 @@ if __name__ == '__main__':
         if matches[i].distance > 50.0:
             break
 
-    img3 = cv2.drawMatches(targetImg, kpT, roi, kpQ, matches[:i], None)
-    img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
+    roiToMatch = cv2.drawMatches(targetImg, kpT, roi, kpQ, matches[:i], None)
 
-    cv2.imshow("Matches", img4)
+    cv2.imshow("Matches", roiToMatch)
+    cv2.imshow("QueryImg", queryImg)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+if __name__ == '__main__':
 
+
+    queryImg = cv2.imread("hatch_with_background.png")
+    matchImageTo('letterSamples', queryImg)
+
+  
     # # use video
     # vidCap = cv2.VideoCapture(0)
     # while True:
