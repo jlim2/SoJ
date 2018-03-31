@@ -16,7 +16,7 @@ from PIL import Image
 # import pytesseract  #Python Tesseract; Installation required.
 import os
 
-def initORB(numFeatures=20):
+def initORB(numFeatures=25):
     """
     Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
     :param numFeatures: the number of features that will be detected and computed using ORB
@@ -121,161 +121,153 @@ def showHoughLines(img):
     cv2.destroyAllWindows()
 
 
-if __name__ == '__main__':
-    """
-    # use video
-    vidCap = cv2.VideoCapture(0)
-    while True:
-        print("hello")
-        gotOne, img = vidCap.read()
-        print(gotOne)
-        # cv2.imshow("Webcam", img)
-        # print(img)
-        # print(gotOne)
-        if (gotOne):
-            print("gotOne")
-            matchedKPs = getNumMatchedDict('letterSamples', img)
-            sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
+def findFocus(img):
+    # img = cv2.imread('hatch_with_background.png')
 
-            # d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
-            print(sortedDic[0])
-
-            # cv2.imshow("WebCam", img)
-            print(matchedKPs)
-
-
-            # for k, v in d_sorted_by_value.items():
-            #     print("%s: %s" % (k, v))
-
-
-            img2 = cv2.imread('letterSamples/'+str(sortedDic[0])+".png")
-            kp, des = computeORB(img2)
-            kp2, des2=computeORB(img)
-            FLANN_INDEX_LSH = 6
-            index_params = dict(algorithm=FLANN_INDEX_LSH,
-                                table_number=6,  # 12
-                                key_size=12,  # 20
-                                multi_probe_level=1)  # 2
-            search_params = dict(checks=50)
-
-            flanner = cv2.FlannBasedMatcher(index_params, search_params)
-            matches = flanner.match(des, des2)
-
-            matches.sort(key=lambda x: x.distance)  # sort by distance
-            i=0
-            for i in range(len(matches)):
-                if matches[i].distance > 50.0:
-                    break
-
-            img3 = cv2.drawMatches(img2, kp, img, kp2, matches[:i], None)
-            img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
-
-            cv2.imshow("Matches", img4)
-
-        x = cv2.waitKey(10)  # Waiting may be needed for window updating
-        char = chr(x & 0xFF)
-        if (char == 'q'):  # esc == '27'
-            break
-    cv2.destroyAllWindows()
-    vidCap.release()
-    """
-
-    # vidCap = cv2.VideoCapture(0)
-    # while True:
-    #     gotOne, frame = vidCap.read()
-    #     if (gotOne):
-    #         print("gotOne")
-    #         kpQuery, desQuery = computeORB(frame)
-    #
-    #         # for targetImg in alphImgs:
-    #
-    #         matches = flanner.match(desTarget, desQuery)
-    #         matches.sort(key=lambda x: x.distance)  # sort by distance
-    #
-    #
-    #         matchedKPs = {}
-    #         # draw matches with distance less than threshold
-    #         #i = 0
-    #         #compare each alphImgs to frame and count how many matches
-    #         # for img in alphImgs:
-    #         #     desTarget = alphFeatureDict.get(img)[1]
-    #         #     matches = flanner.match(desTarget, desQuery)
-    #         #     for i in range(len(matches)):
-    #         #         if matches[i].distance > 50.0:
-    #         #             break
-    #         #         print(matches[i])
-    #
-    #
-    #         for alph in letterFeatureDict:
-    #             targetImg = cv2.imread('letterSamples/'+alph+'.png')
-    #             kpTarget = letterFeatureDict.get(alph)[0]
-    #             desTarget = letterFeatureDict.get(alph)[1]
-    #
-    #             matches = flanner.match(desTarget, desQuery)
-    #             matches.sort(key=lambda x: x.distance)  # sort by distance
-    #             numMatched = 0
-    #             for i in range(len(matches)):
-    #                 if matches[i].distance > 50.0:
-    #                     break
-    #                 numMatched += 1
-    #             matchedKPs.update({alph: numMatched})
-    #
-    #             # print("matches[i]: "+str(matches[i]), end=" ")
-    #             # print("distance: "+str(matches[i].distance), end=" ")
-    #             # print("imgIdx: "+str(matches[i].imgIdx), end=" ")
-    #             # print("queryIdx: " + str(matches[i].queryIdx), end=" ")
-    #             # print("trainIdx: " + str(matches[i].trainIdx))
-    #             # queryImg_idx = matches[i].queryIdx
-    #             # targetImg_idx = matches[i].trainIdx
-    #             #
-    #             # (x1, y1) = kpQuery[queryImg_idx].pt
-    #             # (x2, y2) = kpTarget[targetImg_idx].pt
-    #
-    #             img3 = cv2.drawMatches(targetImg, kpTarget, frame, kpQuery, matches[:i], None)
-    #             img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
-    #             cv2.imshow("Matches", img4)
-    #         print(numMatched)
-    #
-    #         #if numMatched >= 22:
-    #         #    print("matched!")
-    #
-    #
-    #
-    #         x = cv2.waitKey(20)
-    #         c = chr(x & 0xFF)
-    #         if c == 'q':
-    #             break
-    #
-    # vidCap.release()
-    # cv2.destroyAllWindows()
-
-    queryImg = cv2.imread('hatch_with_background.jpg')
-    queryImg = cv2.resize(queryImg, (0, 0), fx=0.2, fy=0.2)
-
-    blurImg = cv2.GaussianBlur(queryImg, (11, 11), 0)
-
-    # showCannyEdge(blurImg)
+    blurImg = cv2.GaussianBlur(img, (11, 11), 0)
 
     edges = getCannyEdge(blurImg)
     _, thresh = cv2.threshold(edges, 0, 255, cv2.THRESH_BINARY)
-    _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
+    _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE,
+                                      cv2.CHAIN_APPROX_SIMPLE)  # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
 
-    cv2.drawContours(queryImg, contours, -1, (0, 255, 0), 3)
-    cv2.imshow('Contours', queryImg)
+
+
+    # # https://docs.opencv.org/3.1.0/dd/d49/tutorial_py_contour_features.html
+
+    # Get the contour with the maximum area
+    # maxAreaInd = 0
+    # for i in range(len(contours)):
+    #     area = cv2.contourArea(contours[i])
+    #     if area > cv2.contourArea(contours[maxAreaInd]):
+    #         maxAreaInd = i
+    x, y, w, h = cv2.boundingRect(contours[0])
+
+    # cv2.drawContours(queryImg, contours, -1, (0, 255, 0), 3)
+    # hull = cv2.convexHull(contours)
+    # cv2.imshow("contours", hull)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # Draw the maximum area contour on the image
+    # x, y, w, h = cv2.boundingRect(contours[maxAreaInd])
+
+    # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    #
+    # # cv2.drawContours(queryImg, contours, -1, (0, 255, 0), 3)
+    # cv2.imshow('Contours', img)
+    #
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    # print(x, y, w, h)
+    return x, y, w, h
+
+def drawFocus(img, x, y, w, h):
+    cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+if __name__ == '__main__':
+    queryImg = cv2.imread("hatch_with_background.png")
+    x, y, w, h = findFocus(queryImg)
+
+    # drawFocus(queryImg, x, y, w, h)
+    cv2.imshow("queryImg", queryImg)
+    cv2.waitKey(0)
+
+    cv2.imshow("roi", queryImg[y:y+h, x:x+w])
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    # cv2.imshow("GaussianBlur", blurImg)
-    # cv2.waitKey(0)
+    # print(x, y, w, h)
+
+    roi = cv2.imwrite("roi.png", queryImg[y:y+h, x:x+w])
+    roi = cv2.imread("roi.png")
+    # roi = queryImg[y:y+h, x:x+w]
+    matchedKPs = getNumMatchedDict('letterSamples', roi)
+    sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
+    targetImg = cv2.imread('letterSamples/' + str(sortedDic[0])+ ".png")
+    print(sortedDic)
+    kpT, desT = computeORB(targetImg)
+    kpQ, desQ = computeORB(roi)
+
+    FLANN_INDEX_LSH = 6
+    index_params = dict(algorithm=FLANN_INDEX_LSH,
+                        table_number=6,  # 12
+                        key_size=12,  # 20
+                        multi_probe_level=1)  # 2
+    search_params = dict(checks=50)
+
+    flanner = cv2.FlannBasedMatcher(index_params, search_params)
+    matches = flanner.match(desT, desQ)
+
+    matches.sort(key=lambda x: x.distance)  # sort by distance
+    i = 0
+    for i in range(len(matches)):
+        if matches[i].distance > 50.0:
+            break
+
+    img3 = cv2.drawMatches(targetImg, kpT, roi, kpQ, matches[:i], None)
+    img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
+
+    cv2.imshow("Matches", img4)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
-
-    # showHoughLines(queryImg)
-    # showCannyEdge(queryImg)
-
-    # matchedKPs = getNumMatchedDict('letterSamples', queryImg)
+    # # use video
+    # vidCap = cv2.VideoCapture(0)
+    # while True:
+    #     gotOne, img = vidCap.read()
+    #     print(gotOne)
+    #     if (gotOne):
+    #         print("gotOne")
+    #         x, y, w, h = findFocus(img)
+    #         # print(img)
+    #         # focusImg = img[y+h : y, x : x+w]
     #
-    # d_sorted_by_value = OrderedDict(sorted(matchedKPs.items(), key=lambda x: x[1]))
-    # for k, v in d_sorted_by_value.items():
-    #     print("%s: %s" % (k, v))
+    #         roi = img[x : x+w, y+h : y]
+    #         cv2.imshow("roi", roi)
+    #         cv2.waitKey(0)
+    #         cv2.destroyAllWindows()
+    #
+    #         print(x, y, w, h)
+    #         # print(focusImg)
+    #
+    #         matchedKPs = getNumMatchedDict('letterSamples', roi)
+    #
+    #         sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
+    #
+    #         print(sortedDic[0])
+    #
+    #         print(matchedKPs)
+    #
+    #         targetImg = cv2.imread('letterSamples/'+str(sortedDic[0])+".png")
+    #         kp, des = computeORB(targetImg)
+    #         kp2, des2=computeORB(roi)
+    #         FLANN_INDEX_LSH = 6
+    #         index_params = dict(algorithm=FLANN_INDEX_LSH,
+    #                             table_number=6,  # 12
+    #                             key_size=12,  # 20
+    #                             multi_probe_level=1)  # 2
+    #         search_params = dict(checks=50)
+    #
+    #         flanner = cv2.FlannBasedMatcher(index_params, search_params)
+    #         matches = flanner.match(des, des2)
+    #
+    #         matches.sort(key=lambda x: x.distance)  # sort by distance
+    #         i=0
+    #         for i in range(len(matches)):
+    #             if matches[i].distance > 50.0:
+    #                 break
+    #
+    #         img3 = cv2.drawMatches(targetImg, kp, roi, kp2, matches[:i], None)
+    #         img4 = cv2.resize(img3, (0, 0), fx=0.5, fy=0.5)
+    #
+    #         cv2.imshow("Matches", img4)
+    #
+    #     x = cv2.waitKey(10)  # Waiting may be needed for window updating
+    #     char = chr(x & 0xFF)
+    #     if (char == 'q'):  # esc == '27'
+    #         break
+    # cv2.destroyAllWindows()
+    # vidCap.release()
 

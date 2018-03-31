@@ -4,10 +4,44 @@
 # Spring 2014
 # Spring 2016: This Homework version also contains working
 #              implementations of UCS and A*
+# Spring 2018: Modified by JJ Lim and So Jin Oh (UCSRoute)
+
+from .FoxQueue import Queue, PriorityQueue
+from .FoxStack import Stack
 
 
-from FoxQueue import Queue, PriorityQueue
-from FoxStack import Stack
+# ---------------------------------------------------------------
+def UCSRoute(graph, startVert, goalVert):
+    """ This algorithm searches a graph using breadth-first search
+    looking for a path from some start vertex to some goal vertex
+    It uses a queue to store the indices of vertices that it still
+    needs to examine."""
+
+    if startVert == goalVert:
+        return []
+    q = PriorityQueue()
+    q.insert(0, startVert)  # TODO: check what cost the start vertex should have
+    visited = {startVert}
+    pred = {startVert: None}
+    while not q.isEmpty():
+        cost, nextVert = q.firstElement()
+        q.delete()
+        neighbors = graph.getNeighbors(nextVert)
+        for n in neighbors:
+            # weight = graph.get #TODO: How to get weight?
+            if type(n) != int:
+                # weighted graph, strip and ignore weights
+                n = n[0]
+            if n not in visited:
+                visited.add(n)
+                pred[n] = nextVert
+                if n != goalVert:
+                    q.insert( n)
+                else:
+                    return reconstructPath(startVert, goalVert, pred)
+    return "NO PATH"
+
+
 
 
 # ---------------------------------------------------------------
