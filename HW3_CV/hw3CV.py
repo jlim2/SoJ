@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 from os import listdir
 from os.path import isfile, join
+import time
 from collections import OrderedDict
 from PIL import Image
 # import pytesseract  #Python Tesseract; Installation required.
@@ -202,37 +203,52 @@ def findRectangleROI(queryImg):
 
     _, contours, h = cv2.findContours(res, cv2.RETR_TREE,
                                       cv2.CHAIN_APPROX_SIMPLE)  # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
-
+    x, y, w, h = 0, 0, 0, 0
     for cnt in contours:
-        approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True),
-                                  True)  # https://stackoverflow.com/questions/11424002/how-to-detect-simple-geometric-shapes-using-opencv
+        approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)  # https://stackoverflow.com/questions/11424002/how-to-detect-simple-geometric-shapes-using-opencv
         # print(len(approx))
         if (len(approx) == 4):
             # cv2.drawContours(queryImg, [cnt], 0, (0, 0, 255), -1)
             x, y, w, h = cv2.boundingRect(cnt)
             # x, y, w, h = cv2.boundingRect(cnt.x)
             # print(x, y, w, h)
+
+    print("x, y, w, h:", x, y, w, h)
+    if (x == 0 and y == 0 and w == 0 and h == 0):
+        print("here")
+        return queryImg
     roi = queryImg[y:y + h, x:x + w]
+    cv2.imwrite('roi.png', roi)
     # cv2.imshow('roi', roi)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+    print("ROI of the query image saved as 'roi.png'")
     return roi
 
 def matchImageTo(targetImgDir, queryImg):
-    # queryImg = cv2.imread("hatch_with_background.png")
-    roi = findRectangleROI(queryImg)
-
+    #Set up Brute Force Matcher
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
+    #Set up ORB
     orb = cv2.ORB_create(nfeatures=15)
 
+    # Get the keypoints and descriptors of the region of interest in the query image
+    roi = findRectangleROI(queryImg)
+    # if (roi is None):
+    #     return None, None, None
+    # DEBUG
+    # cv2.imshow("roi", roi)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     kpQuery, desQuery = orb.detectAndCompute(roi, None)
 
+    # Get the dictionary that has kp,des of each image in the target image directory
     letterFeatureDict = readLetterFeatures(targetImgDir)
+
+    # number of matches for each image will be stored with the name of the image (without extension) as a key value
     matchedKPs = {}
     for letter in letterFeatureDict:
         desTarget = letterFeatureDict.get(letter)[1]
-
         matches = bf.match(desQuery, desTarget)
         matches = sorted(matches, key=lambda x: x.distance)
         numMatched = 0
@@ -242,197 +258,89 @@ def matchImageTo(targetImgDir, queryImg):
             numMatched += 1
         matchedKPs.update({letter: numMatched})
 
+    #sort the matchedKPs to get first two best matches
     sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
+
     targetImg1 = cv2.imread(targetImgDir + '/' + str(sortedDic[0]) + ".png")
+    kpTarget1, desTarget1 = letterFeatureDict.get(sortedDic[0])
+    numMatch1 = matchedKPs.get(sortedDic[0])
+
     targetImg2 = cv2.imread(targetImgDir + '/' + str(sortedDic[1]) + ".png")
+    kpTarget2, desTarget2 = letterFeatureDict.get(sortedDic[1])
+    numMatch2 = matchedKPs.get(sortedDic[1])
 
-    cv2.imshow("Matched #1", targetImg1)
-    cv2.imshow("Matched #2", targetImg2)
+    # #DEBUG: display first two best matches
+    # cv2.imshow("Matched #1", targetImg1)
+    # cv2.imshow("Matched #2", targetImg2)
+    # cv2.waitKey(0)
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    print(sortedDic)
+    #draw matches with first two best matches
+    matches1 = bf.match(desQuery, desTarget1)
+    roiToMatch1 = cv2.drawMatches(targetImg1, kpTarget1, roi.copy(), kpQuery, matches1[:numMatch1], None)
+    # # DEBUG
+    # cv2.imshow("roiToMatch1", roiToMatch1)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    matches2 = bf.match(desQuery, desTarget2)
+    roiToMatch2 = cv2.drawMatches(targetImg2, kpTarget2, roi.copy(), kpQuery, matches2[:numMatch2], None)
 
-    # bfMatcher = getBFTargetCluster(targetImgDir)
-    #
-    #
-    # # matchedKPs = getNumMatchedDict(targetImgDir, roi)
-    # # sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
-    # # targetImg = cv2.imread(targetImgDir + '/' + str(sortedDic[0]) + ".png")
-    # # print(sortedDic)
-    # # kpT, desT = computeORB(targetImg)
-    # kpQ, desQ = computeORB(roi)
-    #
-    # FLANN_INDEX_LSH = 6
-    # index_params = dict(algorithm=FLANN_INDEX_LSH,
-    #                     table_number=6,  # 12
-    #                     key_size=12,  # 20
-    #                     multi_probe_level=1)  # 2
-    # search_params = dict(checks=50)
-    #
-    # # flanner = cv2.FlannBasedMatcher(index_params, search_params)
-    # # matches = flanner.match(desT, desQ)
-    # matches = bfMatcher.match(desQ, None)
-    #
-    # matches.sort(key=lambda x: x.distance)  # sort by distance
-    # # i = 0
-    # # for i in range(len(matches)):
-    # #     if matches[i].distance > 50.0:
-    # #         break
-    #
-    # for i in range(len(matches)):
-    #     print(matches[i].ingIdx)
-    # # roiToMatch = cv2.drawMatches(targetImg, kpT, roi, kpQ, matches[:i], None)
-    #
-    # # return roiToMatch
-    # # cv2.imshow("Matches", roiToMatch)
-    # # cv2.imshow("QueryImg", queryImg)
-    # # cv2.waitKey(0)
-    # # cv2.destroyAllWindows()
+
+    print("sortedDict, roiToMatch1, roiToMatch2")
+    return sortedDic, roiToMatch1, roiToMatch2
+
 
 if __name__ == '__main__':
     cv2.ocl.setUseOpenCL(False)
 
-
-    queryImg = cv2.imread("hatch_with_background.png")    #11
-    # queryImg = cv2.imread("b_with_background.png")    #13
-    # queryImg = cv2.imread("257_with_background.png")
-    #
-    #
-    #
-    # edges = getCannyEdge(queryImg)
-    #
-    # # showCannyEdge(queryImg)
-    # st = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    #
-    #
-    # res = cv2.morphologyEx(src=edges, op=cv2.MORPH_CLOSE,kernel=st) #
-    #
-    #
-    # _, contours, h = cv2.findContours(res, cv2.RETR_TREE,
-    #                                   cv2.CHAIN_APPROX_SIMPLE)  # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
-    #
-    # for cnt in contours:
-    #     approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt,True),True)   # https://stackoverflow.com/questions/11424002/how-to-detect-simple-geometric-shapes-using-opencv
-    #     # print(len(approx))
-    #     if (len(approx) == 4):
-    #         # cv2.drawContours(queryImg, [cnt], 0, (0, 0, 255), -1)
-    #         x, y, w, h = cv2.boundingRect(cnt)
-    #         # x, y, w, h = cv2.boundingRect(cnt.x)
-    #         # print(x, y, w, h)
-    roi = findRectangleROI(queryImg)
-    cv2.imwrite("roi.png", roi)
-    # cv2.imshow("roi", roi)
+    # # use an image
+    # print("first")
+    # queryImg = cv2.imread("hatch_with_background.png")    #11
+    # print("here")
+    # sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples",queryImg)
+    # cv2.imshow("roiToMatch1", roiToMatch1)
+    # cv2.imshow("roiToMatch2", roiToMatch2)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+    # print("there")
 
 
 
-    # size = 5
-    #
-    # blurImg = cv2.GaussianBlur(queryImg, (size, size), 0)
+    # use video frames
+    vidCap = cv2.VideoCapture(0)
+    while True:
+        start_time = time.time()
+        gotOne, frame = vidCap.read()
 
-    # gray = cv2.cvtColor(queryImg, cv2.COLOR_BGR2GRAY)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+        print(gotOne) # DEBUG
+        if (gotOne):
+            print("gotOne")
+            cv2.imshow("VideoCam", frame)
+            sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples", frame)
 
-    # cv2.imshow("blur", blurImg) #DEBUG
-    # edges = getCannyEdge(blurImg)
-    # edges = getCannyEdge(blurImg)
-    # showCannyEdge(blurImg)
-    # showCannyEdge(img)
-    # ret, thresh = cv2.threshold(edges, 0, 255, cv2.THRESH_BINARY)
-    # _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE,
-    #                                   cv2.CHAIN_APPROX_SIMPLE)  # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
-    #
-    # # https://docs.opencv.org/3.1.0/dd/d49/tutorial_py_contour_features.html
+            print(sortedDict, roiToMatch1, roiToMatch2) # DEBUG
+            time.sleep(1.0 - time.time() + start_time)  # Sleep for 1 second minus elapsed time
 
+            if (sortedDict is not None):
+                print(sortedDict)
+                cv2.imshow("roiToMatch1", roiToMatch1)
+                cv2.imshow("roiToMatch2", roiToMatch2)
+            else:
+                # time.sleep(1.0)  # Sleep for 1 second minus elapsed time
+                pass
 
-    # x, y, w, h = 0,0,0,0
-    # if len(contours) > 0:
-    #     x, y, w, h = cv2.boundingRect(contours[2])
-    #     # return x, y, w, h
-    # # else:
-    #     # return None
-    #
-    # cv2.imwrite("roi.png", queryImg[y:y + h, x:x + w])
-    # roi = cv2.imread("roi.png")
+                # if not matchImageTo('letterSamples', frame) is None:
+            #     print("not none")
+            #     cv2.imshow("Matching", matchImageTo('letterSamples', frame))
+            #     cv2.imshow("VideoCam", frame)
+            # else:
+            #     print("none")
+            #     cv2.imshow("VideoCam", frame)
+        x = cv2.waitKey(10)  # Waiting may be needed for window updating
+        char = chr(x & 0xFF)
+        if (char == 'q'):  # esc == '27'
+            break
 
-
-    matchImageTo('letterSamples', queryImg)
-
-    # gray = cv2.cvtColor(queryImg, cv2.COLOR_BGR2GRAY)
-    #
-    # bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    #
-    # FLANN_INDEX_LSH = 6
-    # index_params = dict(algorithm=FLANN_INDEX_LSH,
-    #                     table_number=6,  # 12
-    #                     key_size=12,  # 20
-    #                     multi_probe_level=1)  # 2
-    # search_params = dict(checks=50)
-    #
-    # flanner = cv2.FlannBasedMatcher(index_params, search_params)
-    #
-    #
-    # orb = cv2.ORB_create(nfeatures=15)
-    # """"""
-    # kpQuery, desQuery = orb.detectAndCompute(roi, None)
-    #
-    # letterFeatureDict = readLetterFeatures('letterSamples')
-    # matchedKPs = {}
-    # for letter in letterFeatureDict:
-    #     desTarget = letterFeatureDict.get(letter)[1]
-    #
-    #     matches = bf.match(desQuery, desTarget)
-    #     matches = sorted(matches, key=lambda x: x.distance)
-    #     numMatched = 0
-    #     for i in range(len(matches)):
-    #         if matches[i].distance > 50.0:
-    #             break
-    #         numMatched += 1
-    #     matchedKPs.update({letter: numMatched})
-    #
-    # sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
-    # targetImg = cv2.imread('letterSamples' + '/' + str(sortedDic[0]) + ".png")
-    # print(sortedDic)
+    cv2.destroyAllWindows()
+    vidCap.release()
 
 
-
-
-
-
-    # Since, we have index of only one training image,
-    # all matches will have imgIdx set to 0.
-
-
-
-
-
-
-
-    # matchImageTo('letterSamples', queryImg)
-    # cv2.imshow("Matching", matchImageTo('letterSamples', queryImg))
-    # cv2.imshow("Query Image", queryImg)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    # #use video
-    # vidCap = cv2.VideoCapture(0)
-    # while True:
-    #     gotOne, img = vidCap.read()
-    #     print(gotOne)
-    #     if (gotOne):
-    #         print("gotOne")
-    #         if not matchImageTo('letterSamples', img) is None:
-    #             cv2.imshow("Matching", matchImageTo('letterSamples', img))
-    #             cv2.imshow("VideoCam", img)
-    #         else:
-    #             # cv2.imshow("Matching", matchImageTo('letterSamples', img))
-    #             cv2.imshow("VideoCam", img)
-    #     x = cv2.waitKey(10)  # Waiting may be needed for window updating
-    #     char = chr(x & 0xFF)
-    #     if (char == 'q'):  # esc == '27'
-    #         break
-    # cv2.destroyAllWindows()
-    # vidCap.release()
