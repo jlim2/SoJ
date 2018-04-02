@@ -2,9 +2,12 @@ import cv2
 
 camera = cv2.VideoCapture(0)
 
+# initialize the first frame in the video stream
+firstFrame = None
+
 # loop over the frames of the video
 while True:
-    # grab the current frame
+    # grab the current frame and initialize the occupied/unoccupied
     (grabbed, frame) = camera.read()
 
     # resize the frame, convert it to grayscale, and blur it
@@ -12,7 +15,10 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-    firstFrame = gray
+    # if the first frame is None, initialize it
+    if firstFrame is None:
+        firstFrame = gray
+        continue
 
     # compute the absolute difference between the current frame and
     # first frame
@@ -27,6 +33,7 @@ while True:
 
     # loop over the contours
     for c in cnts:
+
         # compute the bounding box for the contour, draw it on the frame,
         (x, y, w, h) = cv2.boundingRect(c)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
