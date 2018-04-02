@@ -1,3 +1,4 @@
+#https://www.pyimagesearch.com/2015/05/25/basic-motion-detection-and-tracking-with-python-and-opencv/
 import cv2
 
 camera = cv2.VideoCapture(0)
