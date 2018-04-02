@@ -2,12 +2,9 @@ import cv2
 
 camera = cv2.VideoCapture(0)
 
-# initialize the first frame in the video stream
-firstFrame = None
-
 # loop over the frames of the video
 while True:
-    # grab the current frame and initialize the occupied/unoccupied
+    # grab the current frame
     (grabbed, frame) = camera.read()
 
     # resize the frame, convert it to grayscale, and blur it
@@ -15,10 +12,7 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-    # if the first frame is None, initialize it
-    if firstFrame is None:
-        firstFrame = gray
-        continue
+    firstFrame = gray
 
     # compute the absolute difference between the current frame and
     # first frame
@@ -27,18 +21,16 @@ while True:
 
     # dilate the thresholded image to fill in holes, then find contours
     # on thresholded image
-    # thresh = cv2.dilate(thresh, None, iterations=2)
+    thresh = cv2.dilate(thresh, None, iterations=2)
     (_,cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
                                  cv2.CHAIN_APPROX_SIMPLE)
 
     # loop over the contours
     for c in cnts:
-
         # compute the bounding box for the contour, draw it on the frame,
         (x, y, w, h) = cv2.boundingRect(c)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # show the frame and record if the user presses a key
     cv2.imshow("Motion Detection", frame)
 
     v = cv2.waitKey(20)
