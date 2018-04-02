@@ -4,7 +4,9 @@
 @date: 03/20/2018
 @authors: Team SoJ (JJ Lim, So Jin Oh)
 
-This is for Homework 3: Computer Vision
+This is for Homework 3: Computer Vision Task2. Reads a video frame, extracts a
+region of interest, and (attempts to) detect a word. Displays two best matched words
+out of a directory of target words.
 """
 
 import cv2
@@ -12,10 +14,6 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 import time
-from collections import OrderedDict
-from PIL import Image
-# import pytesseract  #Python Tesseract; Installation required.
-import os
 
 def initORB(numFeatures=25):
     """
@@ -26,8 +24,9 @@ def initORB(numFeatures=25):
     return cv2.ORB_create(nfeatures=numFeatures, scoreType=cv2.ORB_FAST_SCORE)
 
 def showORB(img, imgKeypoints):
-    # Initiate STAR detection (http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_orb/py_orb.html) (https://stackoverflow.com/questions/32702433/opencv-orb-detector-finds-very-few-keypoints)
-    orb = initORB()
+    """
+    Display ORB Keypoints on the image
+    """
 
     img2 = cv2.drawKeypoints(img, imgKeypoints, None, color=(0, 255, 0))
     cv2.imshow("ORB KeyPoints", img2)
@@ -58,27 +57,8 @@ def readLetterFeatures(dir):
             letterFeatureDict.update({imgName: (kp, des)})
     return letterFeatureDict
 
-
-def getBFTargetCluster(targetImgsDir):
-    bfMatcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    letterFeatureDict = readLetterFeatures(targetImgsDir)
-    for letter in letterFeatureDict:
-        desTarget = letterFeatureDict.get(letter)[1]
-        bfMatcher.add(desTarget)
-    return bfMatcher
-
+#TODO: Fix this
 def getNumMatchedDict(targetImgsDir, queryImg):
-    # queryImg = cv2.imread(queryImg)
-
-    # FLANN_INDEX_LSH = 6
-    # index_params = dict(algorithm=FLANN_INDEX_LSH,
-    #                     table_number=6,  # 12
-    #                     key_size=12,  # 20
-    #                     multi_probe_level=1)  # 2
-    # search_params = dict(checks=50)
-
-    # flanner = cv2.FlannBasedMatcher(index_params, search_params)
-
     bfMatcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
     letterFeatureDict = readLetterFeatures(targetImgsDir)
@@ -86,6 +66,8 @@ def getNumMatchedDict(targetImgsDir, queryImg):
     # kpQuery, desQuery = computeORB(queryImg)
     orb = cv2.ORB_create()
     kpQuery, desQuery = orb.detectAndCompute(queryImg, None)
+
+
 
     matchedKPs = {}
     for letter in letterFeatureDict:
@@ -95,7 +77,7 @@ def getNumMatchedDict(targetImgsDir, queryImg):
         matches = bfMatcher.match(desTarget, desQuery)
 
         matches.sort(key=lambda x: x.distance)  # sort by distance
-        print(matches)
+        # print(matches) # DEBUG
         numMatched = 0
         for i in range(len(matches)):
             if matches[i].distance > 50.0:
@@ -118,75 +100,6 @@ def showCannyEdge(img):
     cv2.destroyAllWindows()
 
 
-def getHoughLines(img):
-    cannyImg = getCannyEdge(img)
-    lines = cv2.HoughLinesP(cannyImg, 1, np.pi / 180,
-                            threshold=5,
-                            minLineLength=20, maxLineGap=10)
-    for lineSet in lines:
-        for line in lineSet:
-            cv2.line(img, (line[0], line[1]), (line[2], line[3]),
-                     (255, 255, 0))
-    return img
-
-def showHoughLines(img):
-    getHoughLines(img)
-    cv2.imshow("HoughLines", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-def findFocus(img):
-    # img = cv2.imread('hatch_with_background.png')
-
-
-
-    size = 11
-
-    blurImg = cv2.GaussianBlur(img, (size, size), 0)
-    # cv2.imshow("blur", blurImg) #DEBUG
-    # edges = getCannyEdge(blurImg)
-    edges = getCannyEdge(img)
-    # showCannyEdge(img)
-    _, thresh = cv2.threshold(edges, 0, 255, cv2.THRESH_BINARY)
-    _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE,
-                                      cv2.CHAIN_APPROX_SIMPLE)  # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
-
-
-
-    # # https://docs.opencv.org/3.1.0/dd/d49/tutorial_py_contour_features.html
-
-    # Get the contour with the maximum area
-    # maxAreaInd = 0
-    # for i in range(len(contours)):
-    #     area = cv2.contourArea(contours[i])
-    #     if area > cv2.contourArea(contours[maxAreaInd]):
-    #         maxAreaInd = i
-    if len(contours) > 0:
-        x, y, w, h = cv2.boundingRect(contours[0])
-        return x, y, w, h
-    else:
-        return None
-
-    # cv2.drawContours(queryImg, contours, -1, (0, 255, 0), 3)
-    # hull = cv2.convexHull(contours)
-    # cv2.imshow("contours", hull)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # Draw the maximum area contour on the image
-    # x, y, w, h = cv2.boundingRect(contours[maxAreaInd])
-
-    # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    #
-    # # cv2.drawContours(queryImg, contours, -1, (0, 255, 0), 3)
-    # cv2.imshow('Contours', img)
-    #
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    # print(x, y, w, h)
-    # return x, y, w, h
-
 def drawFocus(img, x, y, w, h):
     if x is None:
         return None
@@ -195,6 +108,12 @@ def drawFocus(img, x, y, w, h):
 
 
 def findRectangleROI(queryImg):
+    """
+    Finds a rectangle in the query image that will be used as the region of interest. Preprocessing
+    before matchImageTo.
+    :param queryImg:
+    :return:
+    """
     edges = getCannyEdge(queryImg)
 
     st = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
@@ -230,12 +149,11 @@ def matchImageTo(targetImgDir, queryImg):
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
     #Set up ORB
-    orb = cv2.ORB_create(nfeatures=15)
+    # orb = cv2.ORB_create(nfeatures=15)
+    orb = cv2.ORB_create()
 
-    # Get the keypoints and descriptors of the region of interest in the query image
+    # Get the keypoints and descriptors of the preprocessed region of interest in the query image
     roi = findRectangleROI(queryImg)
-    # if (roi is None):
-    #     return None, None, None
     # DEBUG
     # cv2.imshow("roi", roi)
     # cv2.waitKey(0)
@@ -257,7 +175,7 @@ def matchImageTo(targetImgDir, queryImg):
                 break
             numMatched += 1
         matchedKPs.update({letter: numMatched})
-
+    # matchedKPs = getNumMatchedDict(targetImgDir, roi)
     #sort the matchedKPs to get first two best matches
     sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
 
@@ -317,7 +235,7 @@ if __name__ == '__main__':
             cv2.imshow("VideoCam", frame)
             sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples", frame)
 
-            print(sortedDict, roiToMatch1, roiToMatch2) # DEBUG
+            print("sortedDict, roiToMatch1, roiToMatch2:", sortedDict, roiToMatch1, roiToMatch2) # DEBUG
             time.sleep(1.0 - time.time() + start_time)  # Sleep for 1 second minus elapsed time
 
             if (sortedDict is not None):
