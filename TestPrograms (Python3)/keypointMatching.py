@@ -42,7 +42,7 @@ matches = flann.knnMatch(des1, des2, k=2)
 goodMatches = []
 for mat in matches:
     [m, n]= mat
-    (m.distance < 0.7 * n.distance) and (m.distance <= 0.5)
+    # (m.distance < 0.7 * n.distance) and (m.distance <= 0.5)
 
     if  (m.distance < 0.7 * n.distance) and (m.distance <= 0.5):
         goodMatches.append(mat)
