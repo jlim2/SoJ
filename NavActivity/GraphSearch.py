@@ -12,33 +12,40 @@ from .FoxStack import Stack
 
 # ---------------------------------------------------------------
 def UCSRoute(graph, startVert, goalVert):
-    """ This algorithm searches a graph using breadth-first search
-    looking for a path from some start vertex to some goal vertex
-    It uses a queue to store the indices of vertices that it still
-    needs to examine."""
+    """ This algorithm searches a graph using uniform-cost search
+    looking for a path from some start vertex to other vertices.
+    It uses a priority queue to store the indices of vertices that
+    it still needs to examine."""
 
     if startVert == goalVert:
         return []
-    q = PriorityQueue()
-    q.insert(0, startVert)  # TODO: check what cost the start vertex should have
-    visited = {startVert}
+    visited = {}
     pred = {startVert: None}
+
+    q = PriorityQueue()
+    q.insert(0, (startVert, None))  # Graph addEdge(self, node1, node2, weight)
+                            # PQ insert(self, priority, val):
+    # visited = {startVert}
+
     while not q.isEmpty():
-        cost, nextVert = q.firstElement()
+        priority, verts = q.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
+        vert = verts[0]
+        pred = verts[1]
         q.delete()
-        neighbors = graph.getNeighbors(nextVert)
-        for n in neighbors:
-            # weight = graph.get #TODO: How to get weight?
-            if type(n) != int:
-                # weighted graph, strip and ignore weights
-                n = n[0]
-            if n not in visited:
-                visited.add(n)
-                pred[n] = nextVert
-                if n != goalVert:
-                    q.insert( n)
-                else:
-                    return reconstructPath(startVert, goalVert, pred)
+
+        if vert not in visited:
+            visited.update(vert)
+            pred.update({vert: pred})
+
+            if vert == goalVert:
+                return reconstructPath(startVert, goalVert, pred)
+
+            neighbors = graph.getNeighbors(vert)
+            for n in neighbors:
+                if n not in visited:
+                    cost = priority + graph.getWeight(n, vert)
+                    q.insert(cost, (n, vert))
+                    # pred.update({n: vert})
     return "NO PATH"
 
 
