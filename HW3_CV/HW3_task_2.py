@@ -260,7 +260,7 @@ if __name__ == '__main__':
             sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples", frame)
 
             # print("sortedDict, roiToMatch1, roiToMatch2:", sortedDict, roiToMatch1, roiToMatch2) # DEBUG
-            # time.sleep(1.0 - time.time() + start_time)  # Sleep for 1 second minus elapsed time https://stackoverflow.com/questions/48525971/processing-frame-every-second-in-opencv-python
+            time.sleep(1.0 - time.time() + start_time)  # Sleep for 1 second minus elapsed time https://stackoverflow.com/questions/48525971/processing-frame-every-second-in-opencv-python
 
             if (sortedDict is not None):
                 log = {'match1': sortedDict[0], 'match2': sortedDict[1], 'match3': sortedDict[2]}

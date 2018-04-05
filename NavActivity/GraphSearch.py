@@ -19,32 +19,38 @@ def UCSRoute(graph, startVert, goalVert):
 
     if startVert == goalVert:
         return []
-    visited = {}
-    pred = {startVert: None}
+    visited = []
+    preds = {startVert: None}
 
     q = PriorityQueue()
-    q.insert(0, (startVert, None))  # Graph addEdge(self, node1, node2, weight)
+    q.insert(0, [startVert, None])  # Graph addEdge(self, node1, node2, weight)
                             # PQ insert(self, priority, val):
     # visited = {startVert}
 
     while not q.isEmpty():
         priority, verts = q.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
         vert = verts[0]
+        print("vert: ", vert)
         pred = verts[1]
+        print("pred: ", pred)
+
         q.delete()
 
         if vert not in visited:
-            visited.update(vert)
-            pred.update({vert: pred})
+            visited.append(vert)
+            preds.update({vert: pred})
 
             if vert == goalVert:
-                return reconstructPath(startVert, goalVert, pred)
+                return reconstructPath(startVert, goalVert, preds)
 
             neighbors = graph.getNeighbors(vert)
             for n in neighbors:
+                value, nPriority = n
                 if n not in visited:
-                    cost = priority + graph.getWeight(n, vert)
-                    q.insert(cost, (n, vert))
+                    # print("n: ", n, "vert: ", vert)
+
+                    cost = priority + nPriority
+                    q.insert(cost, [value, vert])
                     # pred.update({n: vert})
     return "NO PATH"
 
@@ -178,6 +184,8 @@ def reconstructPath(startVert, goalVert, preds):
     from start to goal"""
 
     path = [goalVert]
+    print("reconstructPath p",preds[goalVert])
+
     p = preds[goalVert]
     while p != None:
         path.insert(0, p)
