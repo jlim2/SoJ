@@ -19,33 +19,30 @@ def UCSRoute(graph, startVert, goalVert):
 
     if startVert == goalVert:
         return []
-    visited = {}
+
+    visited = []
     pred = {startVert: None}
 
     q = PriorityQueue()
-    q.insert(0, (startVert, None))  # Graph addEdge(self, node1, node2, weight)
-                            # PQ insert(self, priority, val):
-    # visited = {startVert}
-
+    q.insert(0, [startVert, None])
     while not q.isEmpty():
-        priority, verts = q.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
-        vert = verts[0]
-        pred = verts[1]
+        cost, verts = q.firstElement()
+        print(verts)
+        nextVert = verts[0]
+        predVert = verts[1]
         q.delete()
-
-        if vert not in visited:
-            visited.update(vert)
-            pred.update({vert: pred})
-
-            if vert == goalVert:
+        if nextVert not in visited:
+            visited.append(nextVert)
+            pred[nextVert] = predVert
+            if nextVert == goalVert:
                 return reconstructPath(startVert, goalVert, pred)
-
-            neighbors = graph.getNeighbors(vert)
+            neighbors = graph.getNeighbors(nextVert)
             for n in neighbors:
-                if n not in visited:
-                    cost = priority + graph.getWeight(n, vert)
-                    q.insert(cost, (n, vert))
-                    # pred.update({n: vert})
+                (value, priority) = n
+                if value not in visited:
+                    visited.append(value)
+                    pred[value] = nextVert
+                    q.insert(cost+priority, [value, nextVert])
     return "NO PATH"
 
 
@@ -58,6 +55,7 @@ def BFSRoute(graph, startVert, goalVert):
     It uses a queue to store the indices of vertices that it still
     needs to examine."""
 
+"""SOJIN'S VERSION
     if startVert == goalVert:
         return []
     q = Queue()
@@ -80,7 +78,7 @@ def BFSRoute(graph, startVert, goalVert):
                 else:
                     return reconstructPath(startVert, goalVert, pred)
     return "NO PATH"
-
+"""
 
 
 
