@@ -1,14 +1,14 @@
-#https://www.pyimagesearch.com/2015/05/25/basic-motion-detection-and-tracking-with-python-and-opencv/
+#Referenced link: https://www.pyimagesearch.com/2015/05/25/basic-motion-detection-and-tracking-with-python-and-opencv/
 import cv2
 
 camera = cv2.VideoCapture(0)
 
-# initialize the first frame in the video stream
+# first frame in the camera
 firstFrame = None
 
-# loop over the frames of the video
+# loop over the frames of the camera
 while True:
-    # grab the current frame and initialize the occupied/unoccupied
+    # grab the current frame
     (grabbed, frame) = camera.read()
 
     # resize the frame, convert it to grayscale, and blur it
@@ -24,7 +24,7 @@ while True:
     # compute the absolute difference between the current frame and
     # first frame
     frameDelta = cv2.absdiff(firstFrame, gray)
-    thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.threshold(frameDelta, 100, 255, cv2.THRESH_BINARY)[1]
 
     # dilate the thresholded image to fill in holes, then find contours
     # on thresholded image
