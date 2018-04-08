@@ -19,30 +19,39 @@ def UCSRoute(graph, startVert, goalVert):
 
     if startVert == goalVert:
         return []
-
     visited = []
-    pred = {startVert: None}
+    preds = {startVert: None}
 
     q = PriorityQueue()
-    q.insert(0, [startVert, None])
+    q.insert(0, [startVert, None])  # Graph addEdge(self, node1, node2, weight)
+                            # PQ insert(self, priority, val):
+    # visited = {startVert}
+
     while not q.isEmpty():
-        cost, verts = q.firstElement()
-        print(verts)
-        nextVert = verts[0]
-        predVert = verts[1]
+        priority, verts = q.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
+        vert = verts[0]
+        print("vert: ", vert)
+        pred = verts[1]
+        print("pred: ", pred)
+
         q.delete()
-        if nextVert not in visited:
-            visited.append(nextVert)
-            pred[nextVert] = predVert
-            if nextVert == goalVert:
-                return reconstructPath(startVert, goalVert, pred)
-            neighbors = graph.getNeighbors(nextVert)
+
+        if vert not in visited:
+            visited.append(vert)
+            preds.update({vert: pred})
+
+            if vert == goalVert:
+                return reconstructPath(startVert, goalVert, preds)
+
+            neighbors = graph.getNeighbors(vert)
             for n in neighbors:
-                (value, priority) = n
-                if value not in visited:
-                    visited.append(value)
-                    pred[value] = nextVert
-                    q.insert(cost+priority, [value, nextVert])
+                value, nPriority = n
+                if n not in visited:
+                    # print("n: ", n, "vert: ", vert)
+
+                    cost = priority + nPriority
+                    q.insert(cost, [value, vert])
+                    # pred.update({n: vert})
     return "NO PATH"
 
 
@@ -55,7 +64,6 @@ def BFSRoute(graph, startVert, goalVert):
     It uses a queue to store the indices of vertices that it still
     needs to examine."""
 
-"""SOJIN'S VERSION
     if startVert == goalVert:
         return []
     q = Queue()
@@ -78,7 +86,7 @@ def BFSRoute(graph, startVert, goalVert):
                 else:
                     return reconstructPath(startVert, goalVert, pred)
     return "NO PATH"
-"""
+
 
 
 
@@ -176,6 +184,8 @@ def reconstructPath(startVert, goalVert, preds):
     from start to goal"""
 
     path = [goalVert]
+    print("reconstructPath p",preds[goalVert])
+
     p = preds[goalVert]
     while p != None:
         path.insert(0, p)

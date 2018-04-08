@@ -14,6 +14,7 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 import time
+import pandas as pd
 
 def initORB(numFeatures=25):
     """
@@ -242,6 +243,7 @@ if __name__ == '__main__':
     # print("there")
 
 
+    df = pd.DataFrame() # https://stackoverflow.com/questions/16597265/appending-to-an-empty-data-frame-in-pandas
 
     # use video frames
     vidCap = cv2.VideoCapture(0)
@@ -253,7 +255,7 @@ if __name__ == '__main__':
 
         if (gotOne):
             print("--------------------------------------------------------------------------")
-            frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            frame = cv2.resize(frame, (0, 0), fx=1, fy=1)
             cv2.imshow("VideoCam", frame)
             sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples", frame)
 
@@ -261,11 +263,14 @@ if __name__ == '__main__':
             time.sleep(1.0 - time.time() + start_time)  # Sleep for 1 second minus elapsed time https://stackoverflow.com/questions/48525971/processing-frame-every-second-in-opencv-python
 
             if (sortedDict is not None):
+                log = {'match1': sortedDict[0], 'match2': sortedDict[1], 'match3': sortedDict[2]}
+                df = df.append(log, ignore_index=True)
+
                 print(sortedDict)
                 cv2.namedWindow("roiToMatch1")
-                cv2.moveWindow("roiToMatch1", 0, 500)
+                cv2.moveWindow("roiToMatch1", 0, 400)
                 cv2.namedWindow("roiToMatch2")
-                cv2.moveWindow("roiToMatch2", 500, 500)
+                cv2.moveWindow("roiToMatch2", 300, 400)
                 cv2.imshow("roiToMatch1", roiToMatch1)
                 cv2.imshow("roiToMatch2", roiToMatch2)
             else:
@@ -283,6 +288,8 @@ if __name__ == '__main__':
         char = chr(x & 0xFF)
         if (char == 'q'):  # esc == '27'
             break
+        filename = 'HW3_task_2_b_match_results.csv'
+        df.to_csv(filename, sep=',', encoding='utf-8', index=False)
 
     cv2.destroyAllWindows()
     vidCap.release()
