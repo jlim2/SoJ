@@ -32,11 +32,10 @@ def findROIWithHue(frame, hueLower=0, hueUpper=5):
     Find region of interest with the given hue range and draw a rectangle around it.
     Default hue range finds red objects.
     :param frame:
-    :param hueLower:
-    :param hueUpper:
+    :param hueLower: lower limit for the hue range
+    :param hueUpper: upper limit for the hue range
     :return:
     """
-
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) #Change colorspace from BGR to HSV (hue) Hue range is [0,179], Saturation range is [0,255] and Value range is [0,255]
     # h, s, v = cv2.split(hsv)
     # define range of blue color in HSV (https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_imgproc/py_colorspaces/py_colorspaces.html)
@@ -53,23 +52,20 @@ def findROIWithHue(frame, hueLower=0, hueUpper=5):
     st = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
     res = cv2.morphologyEx(src=edges, op=cv2.MORPH_CLOSE, kernel=st)
 
-
     _, contours, h = cv2.findContours(res.copy(), cv2.RETR_EXTERNAL,
                                       cv2.CHAIN_APPROX_NONE)  # https://stackoverflow.com/questions/25504964/opencv-python-valueerror-too-many-values-to-unpack
-    x, y, w, h = 0, 0, 0, 0
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    # cv2.drawContours(frame, contours, -1, (0, 255, 0), 3)
-
-    # cv2.imshow('frame', frame)
-    # cv2.imshow('hueImage', hueImage)
-
 
     return frame
 
 
 if __name__ == '__main__':
+    # Assign hue range limits here
+    hueLower = 0
+    hueUpper = 5
+
     cv2.ocl.setUseOpenCL(False)
 
     vidCap = cv2.VideoCapture(0)
@@ -80,14 +76,14 @@ if __name__ == '__main__':
         gotOne, frame = vidCap.read()
 
         if (gotOne):
-            frame = findROIWithHue(frame, hueLower=0, hueUpper=5)
-            cv2.imshow("VideoCam", frame)
+            frame = findROIWithHue(frame, hueLower=hueLower, hueUpper=hueUpper)
+            title = "Find Hue [" + str(hueLower) + ", "+ str(hueUpper)+ "]"
+            cv2.imshow(title, frame)
 
         x = cv2.waitKey(10)  # Waiting may be needed for window updating
         char = chr(x & 0xFF)
         if (char == 'q'):  # esc == '27'
             break
-
 
     cv2.destroyAllWindows()
     vidCap.release()
