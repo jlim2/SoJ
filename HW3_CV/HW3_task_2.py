@@ -24,15 +24,6 @@ def initORB(numFeatures=25):
     """
     return cv2.ORB_create(nfeatures=numFeatures, scoreType=cv2.ORB_FAST_SCORE)
 
-def showORB(img, imgKeypoints):
-    """
-    Display ORB Keypoints on the image
-    """
-
-    img2 = cv2.drawKeypoints(img, imgKeypoints, None, color=(0, 255, 0))
-    cv2.imshow("ORB KeyPoints", img2)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
 def computeORB(img):
     """
@@ -48,6 +39,12 @@ def computeORB(img):
     return keypoints, des
 
 def readLetterFeatures(dir):
+    """
+    Make a dictionary of features of the images in the given directory. The name of the image in the given directory is
+    a key and the image's feature is a value.
+    :param dir:
+    :return:
+    """
     imgFiles = [f for f in listdir(dir) if isfile(join(dir, f))]
     letterFeatureDict = {}
     for imgFile in imgFiles:
@@ -58,55 +55,11 @@ def readLetterFeatures(dir):
             letterFeatureDict.update({imgName: (kp, des)})
     return letterFeatureDict
 
-#TODO: Fix this
-def getNumMatchedDict(targetImgsDir, queryImg):
-    bfMatcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-    letterFeatureDict = readLetterFeatures(targetImgsDir)
-
-    # kpQuery, desQuery = computeORB(queryImg)
-    orb = cv2.ORB_create()
-    kpQuery, desQuery = orb.detectAndCompute(queryImg, None)
-
-
-
-    matchedKPs = {}
-    for letter in letterFeatureDict:
-        desTarget = letterFeatureDict.get(letter)[1]
-
-        # matches = flanner.match(desTarget, desQuery)
-        matches = bfMatcher.match(desTarget, desQuery)
-
-        matches.sort(key=lambda x: x.distance)  # sort by distance
-        # print(matches) # DEBUG
-        numMatched = 0
-        for i in range(len(matches)):
-            if matches[i].distance > 50.0:
-                break
-            numMatched += 1
-        matchedKPs.update({letter: numMatched})
-
-    return matchedKPs
-
 
 def getCannyEdge(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cannyImg = cv2.Canny(gray, 100, 200)
     return cannyImg
-
-def showCannyEdge(img):
-    cannyImg = getCannyEdge(img)
-    cv2.imshow("Canny", cannyImg)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-def drawFocus(img, x, y, w, h):
-    if x is None:
-        return None
-    else:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
 
 def findRectangleROI(queryImg):
     """
@@ -140,7 +93,14 @@ def findRectangleROI(queryImg):
     print("ROI: Yes")
     return roi
 
+
 def matchImageTo(targetImgDir, queryImg):
+    """
+    Match the query image to images in the given directory.
+    :param targetImgDir:
+    :param queryImg:
+    :return:
+    """
     #Set up Brute Force Matcher
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
@@ -171,17 +131,21 @@ def matchImageTo(targetImgDir, queryImg):
                 break
             numMatched += 1
         matchedKPs.update({letter: numMatched})
-    # matchedKPs = getNumMatchedDict(targetImgDir, roi)
+
     #sort the matchedKPs to get first two best matches
     sortedDic = sorted(matchedKPs, key=matchedKPs.get, reverse=True)
 
-    targetImg1 = cv2.imread(targetImgDir + '/' + str(sortedDic[0]) + ".png")
-    kpTarget1, desTarget1 = letterFeatureDict.get(sortedDic[0])
-    numMatch1 = matchedKPs.get(sortedDic[0]) # if numMatch1 == 0 --> just dont do...
+    return sortedDic
 
-    targetImg2 = cv2.imread(targetImgDir + '/' + str(sortedDic[1]) + ".png")
-    kpTarget2, desTarget2 = letterFeatureDict.get(sortedDic[1])
-    numMatch2 = matchedKPs.get(sortedDic[1])
+
+
+    # targetImg1 = cv2.imread(targetImgDir + '/' + str(sortedDic[0]) + ".png")
+    # kpTarget1, desTarget1 = letterFeatureDict.get(sortedDic[0])
+    # numMatch1 = matchedKPs.get(sortedDic[0]) # if numMatch1 == 0 --> just dont do...
+    #
+    # targetImg2 = cv2.imread(targetImgDir + '/' + str(sortedDic[1]) + ".png")
+    # kpTarget2, desTarget2 = letterFeatureDict.get(sortedDic[1])
+    # numMatch2 = matchedKPs.get(sortedDic[1])
 
     # #DEBUG: display first two best matches
     # cv2.imshow("Matched #1", targetImg1)
@@ -189,43 +153,43 @@ def matchImageTo(targetImgDir, queryImg):
     # cv2.waitKey(0)
 
 
-    #draw matches with first two best matches
-    matches1 = bf.match(desQuery, desTarget1)
+    # #draw matches with first two best matches
+    # matches1 = bf.match(desQuery, desTarget1)
     # Check for error in drawMatches
-    isExecutable1 = True
-    for m in range(len(matches1)):
-        i1 = matches1[m].queryIdx
-        i2 = matches1[m].trainIdx
-        if i1 >= len(kpTarget1):
-            isExecutable1 = False
-        if i2 >= len(kpQuery):
-            isExecutable1 = False
+    # isExecutable1 = True
+    # for m in range(len(matches1)):
+    #     i1 = matches1[m].queryIdx
+    #     i2 = matches1[m].trainIdx
+    #     if i1 >= len(kpTarget1):
+    #         isExecutable1 = False
+    #     if i2 >= len(kpQuery):
+    #         isExecutable1 = False
+    #
+    # if not isExecutable1:
+    #     roiToMatch1 = roi
+    #     print("roiToMatch1: roi")
+    # else:
+    #     roiToMatch1 = cv2.drawMatches(targetImg1, kpTarget1, roi.copy(), kpQuery, matches1[:numMatch1], None)
+    #     print("roiToMatch1: drawMatches")
+    #
+    # matches2 = bf.match(desQuery, desTarget2)
+    # isExecutable2 = True
+    # for m in range(len(matches2)):
+    #     i1 = matches2[m].queryIdx
+    #     i2 = matches2[m].trainIdx
+    #     if i1 >= len(kpTarget2):
+    #         isExecutable2 = False
+    #     if i2 >= len(kpQuery):
+    #         isExecutable2 = False
+    # if not isExecutable2:
+    #     roiToMatch2 = roi
+    #     print("roiToMatch2: roi") #DEBUG
+    #
+    # else:
+    #     roiToMatch2 = cv2.drawMatches(targetImg2, kpTarget2, roi.copy(), kpQuery, matches2[:numMatch2], None)
+    #     print("roiToMatch2: drawMatches") #DEBUG
 
-    if not isExecutable1:
-        roiToMatch1 = roi
-        print("roiToMatch1: roi")
-    else:
-        roiToMatch1 = cv2.drawMatches(targetImg1, kpTarget1, roi.copy(), kpQuery, matches1[:numMatch1], None)
-        print("roiToMatch1: drawMatches")
-
-    matches2 = bf.match(desQuery, desTarget2)
-    isExecutable2 = True
-    for m in range(len(matches2)):
-        i1 = matches2[m].queryIdx
-        i2 = matches2[m].trainIdx
-        if i1 >= len(kpTarget2):
-            isExecutable2 = False
-        if i2 >= len(kpQuery):
-            isExecutable2 = False
-    if not isExecutable2:
-        roiToMatch2 = roi
-        print("roiToMatch2: roi")
-
-    else:
-        roiToMatch2 = cv2.drawMatches(targetImg2, kpTarget2, roi.copy(), kpQuery, matches2[:numMatch2], None)
-        print("roiToMatch2: drawMatches")
-
-    return sortedDic, roiToMatch1, roiToMatch2
+    # return sortedDic, roiToMatch1, roiToMatch2    # comment out to use if want to display matches
 
 
 if __name__ == '__main__':
@@ -257,33 +221,26 @@ if __name__ == '__main__':
             print("--------------------------------------------------------------------------")
             frame = cv2.resize(frame, (0, 0), fx=1, fy=1)
             cv2.imshow("VideoCam", frame)
-            sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples", frame)
+            sortedDict = matchImageTo("letterSamples", frame)
+            # sortedDict, roiToMatch1, roiToMatch2 = matchImageTo("letterSamples", frame)
 
             # print("sortedDict, roiToMatch1, roiToMatch2:", sortedDict, roiToMatch1, roiToMatch2) # DEBUG
-            time.sleep(1.0 - time.time() + start_time)  # Sleep for 1 second minus elapsed time https://stackoverflow.com/questions/48525971/processing-frame-every-second-in-opencv-python
 
             if (sortedDict is not None):
+                # Record in as a csv file the best three matches
                 log = {'match1': sortedDict[0], 'match2': sortedDict[1], 'match3': sortedDict[2]}
                 df = df.append(log, ignore_index=True)
 
                 print(sortedDict)
-                cv2.namedWindow("roiToMatch1")
-                cv2.moveWindow("roiToMatch1", 0, 400)
-                cv2.namedWindow("roiToMatch2")
-                cv2.moveWindow("roiToMatch2", 300, 400)
-                cv2.imshow("roiToMatch1", roiToMatch1)
-                cv2.imshow("roiToMatch2", roiToMatch2)
-            else:
-                # time.sleep(1.0)  # Sleep for 1 second minus elapsed time
-                pass
 
-                # if not matchImageTo('letterSamples', frame) is None:
-            #     print("not none")
-            #     cv2.imshow("Matching", matchImageTo('letterSamples', frame))
-            #     cv2.imshow("VideoCam", frame)
-            # else:
-            #     print("none")
-            #     cv2.imshow("VideoCam", frame)
+                # Display matched the first and second best words next to roi
+                # cv2.namedWindow("roiToMatch1")
+                # cv2.moveWindow("roiToMatch1", 0, 400)
+                # cv2.namedWindow("roiToMatch2")
+                # cv2.moveWindow("roiToMatch2", 300, 400)
+                # cv2.imshow("roiToMatch1", roiToMatch1)
+                # cv2.imshow("roiToMatch2", roiToMatch2)
+        # time.sleep(1.0 - time.time() + start_time)  # Process one frame per second... Sleep for 1 second minus elapsed time https://stackoverflow.com/questions/48525971/processing-frame-every-second-in-opencv-python
         x = cv2.waitKey(10)  # Waiting may be needed for window updating
         char = chr(x & 0xFF)
         if (char == 'q'):  # esc == '27'
