@@ -54,7 +54,7 @@ def whichOper(op):
 
     
 if __name__ == '__main__':
-    fn = 'TestImages/SnowLeo2.jpg'
+    fn = '/Users/JJ/SoJ/TestImages/SnowLeo2.jpg'
     img = cv2.imread(fn)
 
     modes = [('erode', 'dilate'), ('open', 'close'), ('blackhat', 'tophat'), ('gradient',)]

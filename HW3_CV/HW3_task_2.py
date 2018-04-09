@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-@class: COMP380 AI Robotics
 @date: 03/20/2018
 @authors: Team SoJ (JJ Lim, So Jin Oh)
 
-This is for Homework 3: Computer Vision Task2. Reads a video frame, extracts a
-region of interest, and (attempts to) detect a word. Displays two best matched words
-out of a directory of target words.
+This is for COMP380: Bodies/Mind AI Robotics Homework 3: Computer Vision Task2. Reads
+a video frame, extracts a region of interest, and (attempts to) detect a word. Displays
+two best matched words out of a directory of target words.
 """
 
 import cv2

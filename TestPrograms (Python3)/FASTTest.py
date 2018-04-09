@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 
 
-
 fast = cv2.FastFeatureDetector_create()
 
 
