@@ -4,37 +4,36 @@
 # Spring 2014
 # Spring 2016: This Homework version also contains working
 #              implementations of UCS and A*
-# Spring 2018: Modified by JJ Lim and So Jin Oh (UCSRoute)
+# Spring 2018: Modified by JJ Lim and So Jin Oh (UCSRoute, AStarRoute)
 
 from .FoxQueue import Queue, PriorityQueue
 from .FoxStack import Stack
 
 
 # ---------------------------------------------------------------
-def UCSRoute(graph, startVert, goalVert):
-    """ This algorithm searches a graph using uniform-cost search
+def AStarRoute(graph, startVert, goalVert):
+    """ This algorithm searches a graph using a* search
     looking for a path from some start vertex to other vertices.
     It uses a priority queue to store the indices of vertices that
     it still needs to examine."""
-
     if startVert == goalVert:
         return []
     visited = []
     preds = {startVert: None}
 
-    q = PriorityQueue()
-    q.insert(0, [startVert, None])  # Graph addEdge(self, node1, node2, weight)
+    frontier = PriorityQueue()
+    frontier.insert(0, [startVert, None])  # Graph addEdge(self, node1, node2, weight)
                             # PQ insert(self, priority, val):
     # visited = {startVert}
 
-    while not q.isEmpty():
-        priority, verts = q.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
+    while not frontier.isEmpty():
+        priority, verts = frontier.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
         vert = verts[0]
         print("vert: ", vert)
         pred = verts[1]
         print("pred: ", pred)
 
-        q.delete()
+        frontier.delete()
 
         if vert not in visited:
             visited.append(vert)
@@ -48,10 +47,61 @@ def UCSRoute(graph, startVert, goalVert):
                 value, nPriority = n
                 if n not in visited:
                     # print("n: ", n, "vert: ", vert)
+                    g = priority + nPriority
+                    h = graph.heuristicDist(goalVert, n)
+                    f = g + h
 
-                    cost = priority + nPriority
-                    q.insert(cost, [value, vert])
+                    frontier.insert(f, [value, vert])
                     # pred.update({n: vert})
+    return "NO PATH"
+
+
+
+# ---------------------------------------------------------------
+def UCSRoute(graph, startVert, goalVert):
+    """ This algorithm searches a graph using uniform-cost search
+    looking for a path from some start vertex to other vertices.
+    It uses a priority queue to store the indices of vertices that
+    it still needs to examine."""
+
+    if startVert == goalVert:
+        return []
+
+    visited = []
+    preds = {startVert: None}
+
+    frontier = PriorityQueue()
+    frontier.insert(0, [startVert, None])   # Graph addEdge(self, node1, node2, weight)
+                                            # PQ insert(self, priority, [currVert, predVert]):
+    # visited = {startVert}
+
+    while not frontier.isEmpty():
+        costSoFar, [currVert, predVert] = frontier.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
+        print("--------------------------------------")
+        print("Next vertex from queue: ", currVert, "    cost so far =", costSoFar)
+
+
+        frontier.delete()
+
+        if currVert not in visited:
+            visited.append(currVert)
+            preds.update({currVert: predVert})
+
+            if currVert == goalVert:
+                return reconstructPath(startVert, goalVert, preds)
+
+            neighbors = graph.getNeighbors(currVert)
+            for n in neighbors:
+                nextVert, newCost = n
+
+                if nextVert not in visited:
+                    # print("n: ", n, "vert: ", vert)
+
+                    cost = costSoFar + newCost
+                    frontier.insert(cost, [nextVert, currVert])
+
+                    print("     Node", nextVert, " From", currVert, "    new cost so far =", cost)
+
     return "NO PATH"
 
 

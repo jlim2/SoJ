@@ -413,6 +413,7 @@ class DirectedListGraph(Graph):
         This assumes undirected edges."""
         if node1 < self._numVerts and node2 < self._numVerts:
             lst1 = self._adjList[node1]
+            lst2 = self._adjList[node2]
             if node2 in lst1:
                 lst1.remove(node2)
             if node1 in lst2:

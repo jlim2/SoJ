@@ -9,8 +9,7 @@ weights on each cell, and also represents that as a weighted graph."""
 # -- Raising exceptions on bad inputs instead of letting normal python exceptions occur
 # -- Allow for a creation method other than reading data from a file
 
-import Graphs
-
+import NavActivity.Graphs as Graphs
 
 class GridGraph(Graphs.WeightedListGraph):
     """A grid graph is both an occupancy grid with weighted cells, and

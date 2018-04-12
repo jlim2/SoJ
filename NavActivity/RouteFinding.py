@@ -107,9 +107,9 @@ def findRoutes(currMap, searchAlg, isDStar = False):
             t1 = time.time()
             route = searchAlg(currMap, startNode, goalNode)
             t2 = time.time()
-            print ("Route found is:")
-            print (route)
-            print ("Time elapsed:", t2-t1)
+            print("Route found is:")
+            print(route)
+            print("Time elapsed:", t2-t1)
             if currMap.__class__.__name__ == "GridGraph":
                 currMap.printWithRoute(route)
         

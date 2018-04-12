@@ -8,7 +8,7 @@ Susan Fox
 Spring 2014
 """
 
-from Graphs import WeightedListGraph
+from .Graphs import WeightedListGraph
 import math
 
 class MapGraph(WeightedListGraph):
@@ -54,7 +54,7 @@ class MapGraph(WeightedListGraph):
         to compute the straightline distance between the two nodes, and sets
         the weight to be that"""
         if weight == "default":
-            weight = self._straightDist(node1, node2)
+            weight = self.straightDist(node1, node2)
         WeightedListGraph.addEdge(self, node1, node2, weight)
 
 
@@ -71,10 +71,10 @@ class MapGraph(WeightedListGraph):
 
     def heuristicDist(self, node1, node2):
         """Estimates the distance from any node to any other."""
-        return self._straightDist(node1, node2)
+        return self.straightDist(node1, node2)
     
     
-    def _straightDist(self, node1, node2):
+    def straightDist(self, node1, node2):
         """For estimating the straightline distance between two points for short term"""
         loc1 = self.getData(node1)
         loc2 = self.getData(node2)

@@ -1,6 +1,5 @@
 
-import MapGraph
-
+from NavActivity import MapGraph
 
      
 olin = MapGraph.readMapFile("olinGraph.txt")
