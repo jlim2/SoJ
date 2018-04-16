@@ -12,49 +12,52 @@ from .FoxStack import Stack
 
 # ---------------------------------------------------------------
 def AStarRoute(graph, startVert, goalVert):
-    """ This algorithm searches a graph using a* search
+    """ This algorithm searches a graph using uniform-cost search
     looking for a path from some start vertex to other vertices.
     It uses a priority queue to store the indices of vertices that
     it still needs to examine."""
+
     if startVert == goalVert:
         return []
+
     visited = []
     preds = {startVert: None}
 
     frontier = PriorityQueue()
-    frontier.insert(0, [startVert, None])  # Graph addEdge(self, node1, node2, weight)
-                            # PQ insert(self, priority, val):
-    # visited = {startVert}
+    frontier.insert(0, [startVert, None, 0])   # Graph addEdge(self, node1, node2, weight)
+                                            # PQ insert(self, priority, [currVert, predVert, gCost]):
 
     while not frontier.isEmpty():
-        priority, verts = frontier.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
-        vert = verts[0]
-        print("vert: ", vert)
-        pred = verts[1]
-        print("pred: ", pred)
+        costSoFar, [currVert, predVert, gCostSoFar] = frontier.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
+
 
         frontier.delete()
 
-        if vert not in visited:
-            visited.append(vert)
-            preds.update({vert: pred})
+        if currVert not in visited:
+            print("--------------------------------------")
+            print("Next vertex from queue: ", currVert, "    cost so far =", costSoFar, "    gCost so far", gCostSoFar)
 
-            if vert == goalVert:
+            visited.append(currVert)
+            preds.update({currVert: predVert})
+
+            if currVert == goalVert:
                 return reconstructPath(startVert, goalVert, preds)
 
-            neighbors = graph.getNeighbors(vert)
+            neighbors = graph.getNeighbors(currVert)
             for n in neighbors:
-                value, nPriority = n
-                if n not in visited:
-                    # print("n: ", n, "vert: ", vert)
-                    g = priority + nPriority
-                    h = graph.heuristicDist(goalVert, n)
-                    f = g + h
+                nextVert, newCost = n
 
-                    frontier.insert(f, [value, vert])
-                    # pred.update({n: vert})
+                if nextVert not in visited:
+                    gCost = gCostSoFar + newCost #there is something wrong with calculating gCost here... maybe saving gCost instead of fCost will do?
+                    # print("nextVert", "costSoFar", costSoFar, "newCost", newCost, "currVert[0]")
+                    hCost = graph.heuristicDist(goalVert, nextVert)
+                    fCost = gCost + hCost
+                    frontier.insert(fCost, [nextVert, currVert, gCost])
+
+                    print("     Node", nextVert, " From", currVert)
+                    print("          gCost =", gCost, "   hCost", hCost, "   fCost", fCost)
+
     return "NO PATH"
-
 
 
 # ---------------------------------------------------------------
