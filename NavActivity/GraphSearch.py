@@ -26,8 +26,10 @@ def AStarRoute(graph, startVert, goalVert):
 
 
     frontier = PriorityQueue()
-    frontier.insert(0, [startVert, None, 0])   # Graph addEdge(self, node1, node2, weight)
-                                            # PQ insert(self, priority, [currVert, predVert, gCost]):
+    frontier.insert(0, [startVert, None, 0])    # Graph addEdge(self, node1, node2, weight)
+                                                # PQ insert(self, priority, [currVert, predVert, gCost]):
+
+    # keep in track of the maximum size of frontier queue and the number of deleted nodes for the analysis/testing
     maxQueueSize = frontier.size
     numDeletedNodes = 0
     while not frontier.isEmpty():
@@ -84,15 +86,19 @@ def UCSRoute(graph, startVert, goalVert):
     frontier = PriorityQueue()
     frontier.insert(0, [startVert, None])   # Graph addEdge(self, node1, node2, weight)
                                             # PQ insert(self, priority, [currVert, predVert]):
-    # visited = {startVert}
+
+    # keep in track of the maximum size of frontier queue and the number of deleted nodes for the analysis/testing
+    maxQueueSize = frontier.size
+    numDeletedNodes = 0
 
     while not frontier.isEmpty():
         costSoFar, [currVert, predVert] = frontier.firstElement() # path cost = path cost of the pred +  the weight for the edge between the predecessor and the neighbor
-        print("--------------------------------------")
-        print("Next vertex from queue: ", currVert, "    cost so far =", costSoFar)
+        # print("--------------------------------------")
+        # print("Next vertex from queue: ", currVert, "    cost so far =", costSoFar)
 
 
         frontier.delete()
+        numDeletedNodes += 1
 
         if currVert not in visited:
             visited.append(currVert)
@@ -111,7 +117,13 @@ def UCSRoute(graph, startVert, goalVert):
                     cost = costSoFar + newCost
                     frontier.insert(cost, [nextVert, currVert])
 
-                    print("     Node", nextVert, " From", currVert, "    new cost so far =", cost)
+                    # print("     Node", nextVert, " From", currVert, "    new cost so far =", cost)
+
+
+        # update the maximum size of the queue
+        if maxQueueSize < frontier.size:
+            maxQueueSize = frontier.size
+            # print("maxQueueSize", maxQueueSize)   #DEBUG
 
     return "NO PATH"
 
