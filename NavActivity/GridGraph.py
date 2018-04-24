@@ -144,21 +144,26 @@ class GridGraph(Graphs.WeightedListGraph):
     def printWithRoute(self, route):
         """Helper to print the grid representation, mostly
         for debugging."""
+        sumVals = 0
         for row in range(self.mapHeight):
             rowStr = ""
             for col in range(self.mapWidth):
                 val = self.grid[row, col]
                 node = row * self.mapWidth + col
                 if node == route[0]:
+                    sumVals += val
                     valStr = "S".rjust(3)
                 elif node == route[-1]:
+                    sumVals += val
                     valStr = 'G'.rjust(3)
                 elif node in route:
+                    sumVals += val
                     valStr = 'X'.rjust(3)
                 else:
                     valStr = str(val).rjust(3)
                 rowStr += valStr + " "
             print(rowStr)
+        print("Sum of values:", sumVals)
 
 
     def printGrid(self):
