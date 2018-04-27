@@ -40,14 +40,14 @@ class DStarAlgorithm:
             self.rhs[s] = math.inf
             self.g[s] = math.inf
         self.rhs[self.startVert] = 0
-        self.U.insert(self.startVert, self.calculateKey(self.startVert))
+        self.U.insert(self.calculateKey(self.startVert), self.startVert)
 
         
     def computeShortestPath(self):
         """The ComputeShortestPath algorithm from the pseudocode."""
-        while (self.U.size != 0) and ((self.U.firstElement() < self.calculateKey(self.goalVert))
+        while (self.U.size != 0) and ((self.U.firstElement()[0] < self.calculateKey(self.goalVert))
                                        or (self.rhs[self.goalVert]!= self.g[self.goalVert])):
-            u = self.U.firstElement()[0]
+            u = self.U.firstElement()[1]
             self.U.dequeue()
             if self.g[u] > self.rhs[u]:
                 self.g[u] = self.rhs[u]
@@ -66,7 +66,7 @@ class DStarAlgorithm:
         if self.U.contains(vert):
             self.U.removeValue(vert)
         if self.g[vert] != self.rhs[vert]:
-            self.U.insert(vert, self.calculateKey(vert))
+            self.U.insert(self.calculateKey(vert), vert)
         pass
 
 
