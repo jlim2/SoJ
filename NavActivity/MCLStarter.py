@@ -10,6 +10,8 @@ Units throughout are in centimeters.
 """
 
 import random
+from NavActivity.SturdyRobot_HW4 import SturdyBot
+import ev3dev.ev3 as ev3
 
 
 class MonteCarloLocalizer:
@@ -260,6 +262,34 @@ def MCLDemo():
             print("MCL Result:", result)
 
 if __name__ == "__main__":
-    MCLDemo()
+    """ Monte Carlo Localization Demo  """
+    # MCLDemo()
+
+
+    """ Monte Carlo Localization with SturdyBot """
+    buttons = ev3.Button()
+    ev3.Sound.set_volume(100)
+    ev3.Sound.speak("Starting")
+    mclConfig = {SturdyBot.LEFT_MOTOR: 'outC',
+                 SturdyBot.RIGHT_MOTOR: 'outB',
+                 SturdyBot.ULTRA_SENSOR: 'in3', }
+    mclRobot = SturdyBot('MonteCarlo', mclConfig)
+
+    while (not buttons.any()):
+        mclRobot.forward(speed=0.2, time=2.0)
+        # function here to calculate the distance moved!
+
+
+        sensorDataDist = mclRobot.readDistance()
+        if 5 <= sensorDataDist < 40:
+            sensorDataString = "wall"
+        elif 40 <= sensorDataDist < 70:
+            sensorDataString = "no wall"
+        else:
+            sensorDataString = "unknown"
+
+
+    ev3.Sound.speak("Done")
+
 
 
