@@ -20,7 +20,8 @@ def AStarRoute(graph, startVert, goalVert):
     if startVert == goalVert:
         return []
 
-    visited = []
+    # visited = []
+    visited = set()
     preds = {startVert: None}
 
 
@@ -43,10 +44,12 @@ def AStarRoute(graph, startVert, goalVert):
             # print("--------------------------------------")
             # print("Next vertex from queue: ", currVert, "    cost so far =", costSoFar, "    gCost so far", gCostSoFar)
 
-            visited.append(currVert)
+            # visited.append(currVert)
+            visited.add(currVert)
             preds.update({currVert: predVert})
 
             if currVert == goalVert:
+                print("maxQueueSize", maxQueueSize, "   numDeletedNodes", numDeletedNodes)
                 return reconstructPath(startVert, goalVert, preds)
 
             neighbors = graph.getNeighbors(currVert)
@@ -67,6 +70,7 @@ def AStarRoute(graph, startVert, goalVert):
             maxQueueSize = frontier.size
             # print("maxQueueSize", maxQueueSize)   #DEBUG
 
+
     return "NO PATH"
 
 
@@ -80,7 +84,8 @@ def UCSRoute(graph, startVert, goalVert):
     if startVert == goalVert:
         return []
 
-    visited = []
+    # visited = [] #
+    visited = set()
     preds = {startVert: None}
 
     frontier = PriorityQueue()
@@ -101,10 +106,12 @@ def UCSRoute(graph, startVert, goalVert):
         numDeletedNodes += 1
 
         if currVert not in visited:
-            visited.append(currVert)
+            # visited.append(currVert)
+            visited.add(currVert)
             preds.update({currVert: predVert})
 
             if currVert == goalVert:
+                print("maxQueueSize", maxQueueSize, "   numDeletedNodes", numDeletedNodes)
                 return reconstructPath(startVert, goalVert, preds)
 
             neighbors = graph.getNeighbors(currVert)

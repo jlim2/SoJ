@@ -37,8 +37,11 @@ class MonteCarloLocalizer:
     def initSamples(self):
         """Creates self.numParticles samples, each of which are generated randomly
         with a uniform distribution across the range from minVal to maxVal."""
-        pass
         # Define this (note random.uniform is helpful here!)
+        for i in range(self.numParticles):
+            self.samples.append(random.uniform(a=self.minValue, b=self.maxValue))
+
+        # self.samples = random.uniform(a=self.minValue, b=self.maxValue) * self.numParticles
 
 
     def mclCycle(self, moveData, senseData):
@@ -56,9 +59,18 @@ class MonteCarloLocalizer:
         # 6. Normalize the weights (note I've provided a method for this)
         # 7. Use the weights to resample from the new sample list (see the method I've provided)
         # 8. Store the new samples into self.samples, and the new weights to a local variable, newSampleWeights
-
+        newSamples = self.samples[:] #self.samples[:] copies, self.sample sets up a pointer
+        newWeights = [-1] * self.numParticles #can create new weightlist that start fresh each time
+        for i in range(self.numParticles):
+            newSample = self.motionUpdate(newY=newSamples[i], deltaY=moveData) #TODO: How do i know what y val is? in particle, what is stored?
+            newWeight = self.perceptionUpdate(newParticle=newSamples[i], sensorData=senseData)
+            newSamples[i] = newSample
+            newWeights[i] = newWeight
+        newWeights = self.normalize(newWeights)
+        newSamples, newWeights = self.resample(newSamples, newWeights)
+        self.samples = newSamples
         self.printMCLStatus()
-        CoM =  self.findCenterOfMass(newSampleWeights)
+        CoM =  self.findCenterOfMass(newWeights)
         return CoM
 
 
@@ -67,8 +79,13 @@ class MonteCarloLocalizer:
         this updates the old position accordingly, adding a random amount of noise based on a gaussian
         distribution. The updated value is returned
         """
-        pass
-        # You define this one
+        updatedY = newY + deltaY + random.gauss(mu=0.0, sigma=1.0)
+        if updatedY < self.minValue:
+            return self.minValue
+        elif updatedY > self.maxValue:
+            return self.maxValue
+        else:
+            return updatedY
 
     def perceptionUpdate(self, newParticle, sensorData):
         """This takes in a new particle/location, and the sensor data, which is one of "wall",
@@ -91,15 +108,33 @@ class MonteCarloLocalizer:
                 return mapVal
         return "unknown"
 
+    # For Python 3.6
+    # def resample(self, samplePool, weights):
+    #     """Takes in pool of new samples and corresponding weights, and it resamples from them.
+    #     It makes a corresponding weight associated with each chose new particle, for later use."""
+    #     newSamples = random.choices(samplePool, weights, k=self.numParticles)
+    #     newW = []
+    #     for s in newSamples:
+    #         indx = samplePool.index(s)
+    #         newW.append(weights[indx])
+    #     return newSamples, newW
     def resample(self, samplePool, weights):
         """Takes in pool of new samples and corresponding weights, and it resamples from them.
         It makes a corresponding weight associated with each chose new particle, for later use."""
-        newSamples = random.choices(samplePool, weights, k=self.numParticles)
-        newW = []
-        for s in newSamples:
-            indx = samplePool.index(s)
-            newW.append(weights[indx])
-        return newSamples, newW
+        #newSamples = random.choices(samplePool, weights, k=self.numParticles)
+        # Python 3.6 can do the previous, but now we need to do it by hand.
+        newSamples = []
+        newWeights = []
+        for i in range(len(samplePool)):
+            randVal = random.random()
+            sampIndex = 0
+            total = weights[0]
+            while randVal >= total:
+                sampIndex += 1
+                total += weights[sampIndex]
+            newSamples.append(samplePool[sampIndex])
+            newWeights.append(weights[sampIndex])
+        return newSamples, newWeights
 
     def normalize(self, weights):
         """Takes a bunch of newly-computed weights and normalizes them so they add up to 1.0"""
@@ -129,8 +164,8 @@ class MonteCarloLocalizer:
         """Prints a rough histogram with 20 bins"""
         bins = [0] * self.displayBins
         binSize = self.maxValue / self.displayBins
-        displaySamps = self.samples[:]
-        displaySamps.sort()
+        displaySamps = self.samples
+        displaySamps = sorted(displaySamps)
         currLimit = binSize
         binIndex = 0
         partIndex = 0
@@ -196,7 +231,7 @@ def MCLDemo():
                   (121.0, 137.0, "no wall"), (137.0, 182.0, "wall"), (182.0, 185.0, "no wall")]
     opposites = {"wall": "no wall", "no wall": "wall"}
 
-    monte = MonteCarloLocalizer(1000, 0, 185, doorsWorld)
+    monte = MonteCarloLocalizer(numParticles=1000, minValue=0, maxValue=185, worldMap=doorsWorld)
 
     # quick simulation to test the code
     actualLoc = 1.0
