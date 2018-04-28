@@ -10,8 +10,9 @@ Units throughout are in centimeters.
 """
 
 import random
-from NavActivity.SturdyRobot_HW4 import SturdyBot
+from SturdyRobot_HW4 import SturdyBot
 import ev3dev.ev3 as ev3
+import time
 
 
 class MonteCarloLocalizer:
@@ -65,8 +66,8 @@ class MonteCarloLocalizer:
         newWeights = [-1] * self.numParticles #can create new weightlist that start fresh each time
         for i in range(self.numParticles):
             newSample = self.motionUpdate(newY=newSamples[i], deltaY=moveData) #TODO: How do i know what y val is? in particle, what is stored?
-            newWeight = self.perceptionUpdate(newParticle=newSamples[i], sensorData=senseData)
             newSamples[i] = newSample
+            newWeight = self.perceptionUpdate(newParticle=newSamples[i], sensorData=senseData)
             newWeights[i] = newWeight
         newWeights = self.normalize(newWeights)
         newSamples, newWeights = self.resample(newSamples, newWeights)
@@ -261,12 +262,17 @@ def MCLDemo():
             monte.printPoint(result, 'C')
             print("MCL Result:", result)
 
+
+
 if __name__ == "__main__":
     """ Monte Carlo Localization Demo  """
     # MCLDemo()
 
-
     """ Monte Carlo Localization with SturdyBot """
+    doorsWorld = [(0.0, 32.0, "wall"), (32.0, 48.0, "no wall"),
+                  (48.0, 93.0, "wall"), (93.0, 109.0, "no wall"), (109.0, 121.0, "wall"),
+                  (121.0, 137.0, "no wall"), (137.0, 182.0, "wall"), (182.0, 185.0, "no wall")]
+    monte = MonteCarloLocalizer(numParticles=100, minValue=0, maxValue=185, worldMap=doorsWorld)
     buttons = ev3.Button()
     ev3.Sound.set_volume(100)
     ev3.Sound.speak("Starting")
@@ -274,19 +280,29 @@ if __name__ == "__main__":
                  SturdyBot.RIGHT_MOTOR: 'outB',
                  SturdyBot.ULTRA_SENSOR: 'in3', }
     mclRobot = SturdyBot('MonteCarlo', mclConfig)
-
+    moveDataY = 0
+    moveDataDelta = 2
+    start = time.time()
     while (not buttons.any()):
-        mclRobot.forward(speed=0.2, time=2.0)
-        # function here to calculate the distance moved!
-
-
+        mclRobot.forward(speed=0.1, time= 0.326)
+        #update moveData every 2cm
+        # elapsed = time.time() - start
+        # if (elapsed % (0.326 * 1000)) < 50:
+        moveDataY += moveDataDelta
         sensorDataDist = mclRobot.readDistance()
-        if 5 <= sensorDataDist < 40:
+        if 0 <= sensorDataDist < 40:
             sensorDataString = "wall"
-        elif 40 <= sensorDataDist < 70:
+        elif 40 <= sensorDataDist < 150:
             sensorDataString = "no wall"
         else:
             sensorDataString = "unknown"
+        CoM = monte.mclCycle(moveDataDelta, sensorDataString)
+        monte.printPoint(moveDataY, 'E')
+        if CoM is not None:
+            monte.printPoint(CoM, 'C')
+            print("MCL Result:", CoM)
+
+
 
 
     ev3.Sound.speak("Done")
