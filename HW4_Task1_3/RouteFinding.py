@@ -6,9 +6,9 @@ graph that is a topological representation of the robot's world.  May need
 to be combined with a more detailed map for localization purposes"""
 
 
-from NavActivity import LoadGraphs
-from NavActivity import GridGraph
-from NavActivity import GraphSearch
+from HW4_Task1_3 import LoadGraphs
+from HW4_Task1_3 import GridGraph
+from HW4_Task1_3 import GraphSearch
 
 import time
 
