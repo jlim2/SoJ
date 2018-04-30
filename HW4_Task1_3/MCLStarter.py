@@ -12,7 +12,6 @@ Units throughout are in centimeters.
 import random
 from SturdyRobot_HW4 import SturdyBot
 import ev3dev.ev3 as ev3
-import time
 
 
 class MonteCarloLocalizer:
@@ -27,7 +26,7 @@ class MonteCarloLocalizer:
         self.numParticles = numParticles
         self.minValue = minValue
         self.maxValue = maxValue
-        self.countCycles = 0      # This should be updated in mclCycle to count how many cycles have run
+        self.countCycles = 0  # This should be updated in mclCycle to count how many cycles have run
         self.displayBins = 40
 
         # set up initial samples, and then display the text version of the map and histogram
@@ -36,7 +35,6 @@ class MonteCarloLocalizer:
         self.initSamples()
         self.printMCLStatus()
 
-
     def initSamples(self):
         """Creates self.numParticles samples, each of which are generated randomly
         with a uniform distribution across the range from minVal to maxVal."""
@@ -44,8 +42,7 @@ class MonteCarloLocalizer:
         for i in range(self.numParticles):
             self.samples.append(random.uniform(a=self.minValue, b=self.maxValue))
 
-        # self.samples = random.uniform(a=self.minValue, b=self.maxValue) * self.numParticles
-
+            # self.samples = random.uniform(a=self.minValue, b=self.maxValue) * self.numParticles
 
     def mclCycle(self, moveData, senseData):
         """Main MCL cycle. This performs one "cycle" given movement data and sensor data,
@@ -62,10 +59,10 @@ class MonteCarloLocalizer:
         # 6. Normalize the weights (note I've provided a method for this)
         # 7. Use the weights to resample from the new sample list (see the method I've provided)
         # 8. Store the new samples into self.samples, and the new weights to a local variable, newSampleWeights
-        newSamples = self.samples[:] #self.samples[:] copies, self.sample sets up a pointer
-        newWeights = [-1] * self.numParticles #can create new weightlist that start fresh each time
+        newSamples = self.samples[:]  # self.samples[:] copies, self.sample sets up a pointer
+        newWeights = [-1] * self.numParticles  # can create new weightlist that start fresh each time
         for i in range(self.numParticles):
-            newSample = self.motionUpdate(newY=newSamples[i], deltaY=moveData) #TODO: How do i know what y val is? in particle, what is stored?
+            newSample = self.motionUpdate(newY=newSamples[i], deltaY=moveData)
             newSamples[i] = newSample
             newWeight = self.perceptionUpdate(newParticle=newSamples[i], sensorData=senseData)
             newWeights[i] = newWeight
@@ -73,9 +70,8 @@ class MonteCarloLocalizer:
         newSamples, newWeights = self.resample(newSamples, newWeights)
         self.samples = newSamples
         self.printMCLStatus()
-        CoM =  self.findCenterOfMass(newWeights)
+        CoM = self.findCenterOfMass(newWeights)
         return CoM
-
 
     def motionUpdate(self, newY, deltaY):
         """Given particle's y value, and move information, which is the reported change in y,
@@ -124,7 +120,7 @@ class MonteCarloLocalizer:
     def resample(self, samplePool, weights):
         """Takes in pool of new samples and corresponding weights, and it resamples from them.
         It makes a corresponding weight associated with each chose new particle, for later use."""
-        #newSamples = random.choices(samplePool, weights, k=self.numParticles)
+        # newSamples = random.choices(samplePool, weights, k=self.numParticles)
         # Python 3.6 can do the previous, but now we need to do it by hand.
         newSamples = []
         newWeights = []
@@ -225,7 +221,6 @@ class MonteCarloLocalizer:
         print(mapStr)
 
 
-
 def MCLDemo():
     """This runs a simple simulation where the robot starts at 1cm and moves about 2 cm each time until it gets
     to the far end"""
@@ -263,7 +258,6 @@ def MCLDemo():
             print("MCL Result:", result)
 
 
-
 if __name__ == "__main__":
     """ Monte Carlo Localization Demo  """
     # MCLDemo()
@@ -280,14 +274,14 @@ if __name__ == "__main__":
                  SturdyBot.RIGHT_MOTOR: 'outB',
                  SturdyBot.ULTRA_SENSOR: 'in3', }
     mclRobot = SturdyBot('MonteCarlo', mclConfig)
+
     moveDataY = 0
     moveDataDelta = 2
-    start = time.time()
+
     while (not buttons.any()):
-        mclRobot.forward(speed=0.1, time= 0.326)
-        #update moveData every 2cm
-        # elapsed = time.time() - start
-        # if (elapsed % (0.326 * 1000)) < 50:
+        mclRobot.forward(speed=0.1, time=0.326)
+
+        # update moveData after moving every 2cm, 0.326seconds to move 2cm
         moveDataY += moveDataDelta
         sensorDataDist = mclRobot.readDistance()
         if 0 <= sensorDataDist < 40:
@@ -302,10 +296,4 @@ if __name__ == "__main__":
             monte.printPoint(CoM, 'C')
             print("MCL Result:", CoM)
 
-
-
-
     ev3.Sound.speak("Done")
-
-
-
