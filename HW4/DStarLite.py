@@ -41,6 +41,8 @@ class DStarAlgorithm:
             self.g[s] = math.inf
         self.rhs[self.startVert] = 0
         self.U.insert(self.calculateKey(self.startVert), self.startVert)
+        self.maxQueueSize = self.U.size
+        self.numDeletedNodes = 0
 
         
     def computeShortestPath(self):
@@ -49,6 +51,8 @@ class DStarAlgorithm:
                                        or (self.rhs[self.goalVert]!= self.g[self.goalVert])):
             u = self.U.firstElement()[1]
             self.U.dequeue()
+            self.numDeletedNodes += 1
+
             if self.g[u] > self.rhs[u]:
                 self.g[u] = self.rhs[u]
             else:
@@ -56,6 +60,10 @@ class DStarAlgorithm:
                 self.updateVertex(u)
             for s in self.graph.getNeighbors(u):
                 self.updateVertex(s[0])
+            # update the maximum size of the queue
+            if self.maxQueueSize < self.U.size:
+                    self.maxQueueSize = self.U.size
+        print("maxQueueSize", self.maxQueueSize, "   numDeletedNodes", self.numDeletedNodes)
         return self.reconstructPath()
 
                 
